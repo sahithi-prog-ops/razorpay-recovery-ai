@@ -1,0 +1,698 @@
+[
+    {
+        "timestamp": "2026-08-25T01:25:07.227858",
+        "payment_id": "pay_test_8",
+        "amount": 10958,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-25T01:34:48.922617",
+        "payment_id": "pay_test_8",
+        "amount": 10958,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T19:44:08.078305",
+        "payment_id": "pay_test_8",
+        "amount": 10958,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T19:44:08.112479",
+        "payment_id": "pay_test_8",
+        "amount": 10958,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T19:45:14.785390",
+        "payment_id": "pay_test_8",
+        "amount": 10958,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T19:45:14.801283",
+        "payment_id": "pay_test_8",
+        "amount": 10958,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T19:45:20.244325",
+        "payment_id": "pay_test_8",
+        "amount": 10958,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T19:45:20.274224",
+        "payment_id": "pay_test_8",
+        "amount": 10958,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T19:45:48.660882",
+        "payment_id": "pay_test_8",
+        "amount": 10958,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T19:45:48.674964",
+        "payment_id": "pay_test_8",
+        "amount": 10958,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T19:45:48.719790",
+        "payment_id": "pay_test_8",
+        "amount": 10958,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T19:45:48.733892",
+        "payment_id": "pay_test_8",
+        "amount": 10958,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T19:45:56.211064",
+        "payment_id": "pay_test_8",
+        "amount": 10958,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T19:45:56.227005",
+        "payment_id": "pay_test_8",
+        "amount": 10958,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T19:55:10.545932",
+        "payment_id": "pay_test_11",
+        "amount": 90233,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T19:58:43.333443",
+        "payment_id": "pay_test_11",
+        "amount": 90233,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T20:03:09.926839",
+        "payment_id": "pay_test_11",
+        "amount": 90233,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T20:05:36.094072",
+        "payment_id": "pay_test_11",
+        "amount": 90233,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T20:05:36.104910",
+        "payment_id": "pay_test_11",
+        "amount": 90233,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T20:05:39.842691",
+        "payment_id": "pay_test_11",
+        "amount": 90233,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T20:05:39.858894",
+        "payment_id": "pay_test_11",
+        "amount": 90233,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T20:07:43.936279",
+        "payment_id": "pay_test_11",
+        "amount": 90233,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T20:07:43.968816",
+        "payment_id": "pay_test_11",
+        "amount": 90233,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T20:07:44.235989",
+        "payment_id": "pay_test_11",
+        "amount": 90233,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T20:07:44.272198",
+        "payment_id": "pay_test_11",
+        "amount": 90233,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T20:16:52.587156",
+        "payment_id": "pay_test_11",
+        "amount": 90233,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T20:16:52.640307",
+        "payment_id": "pay_test_11",
+        "amount": 90233,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T20:16:52.992862",
+        "payment_id": "pay_test_11",
+        "amount": 90233,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T20:16:53.244926",
+        "payment_id": "pay_test_11",
+        "amount": 90233,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T22:30:15.899263",
+        "payment_id": "pay_test_11",
+        "amount": 90233,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T22:30:15.921143",
+        "payment_id": "pay_test_11",
+        "amount": 90233,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T22:30:34.536016",
+        "payment_id": "pay_test_11",
+        "amount": 90233,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T22:30:34.579165",
+        "payment_id": "pay_test_11",
+        "amount": 90233,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T22:38:55.080677",
+        "payment_id": "pay_test_11",
+        "amount": 90233,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T22:38:55.094105",
+        "payment_id": "pay_test_11",
+        "amount": 90233,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T22:39:11.166760",
+        "payment_id": "pay_test_11",
+        "amount": 90233,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T22:42:32.938236",
+        "payment_id": "pay_test_11",
+        "amount": 90233,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T22:45:19.782442",
+        "payment_id": "pay_test_11",
+        "amount": 90233,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T22:45:19.798811",
+        "payment_id": "pay_test_11",
+        "amount": 90233,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T22:50:51.111188",
+        "payment_id": "pay_test_11",
+        "amount": 90233,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T22:50:51.120261",
+        "payment_id": "pay_test_11",
+        "amount": 90233,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T22:51:02.620738",
+        "payment_id": "pay_test_8",
+        "amount": 10958,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T22:51:25.895507",
+        "payment_id": "pay_test_11",
+        "amount": 90233,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T22:51:25.938763",
+        "payment_id": "pay_test_11",
+        "amount": 90233,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T22:52:06.078237",
+        "payment_id": "pay_test_8",
+        "amount": 10958,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T22:54:19.959403",
+        "payment_id": "pay_test_8",
+        "amount": 10958,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T22:54:19.963513",
+        "payment_id": "pay_test_8",
+        "amount": 10958,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T22:56:51.864612",
+        "payment_id": "pay_test_8",
+        "amount": 10958,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T22:56:51.911017",
+        "payment_id": "pay_test_8",
+        "amount": 10958,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T22:56:52.881411",
+        "payment_id": "pay_test_8",
+        "amount": 10958,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T22:56:52.934082",
+        "payment_id": "pay_test_8",
+        "amount": 10958,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T23:03:01.558932",
+        "payment_id": "pay_test_8",
+        "amount": 10958,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T23:03:19.835690",
+        "payment_id": "pay_test_11",
+        "amount": 90233,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T23:03:49.315371",
+        "payment_id": "pay_test_8",
+        "amount": 10958,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T23:04:35.702924",
+        "payment_id": "pay_test_8",
+        "amount": 10958,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T23:04:35.725607",
+        "payment_id": "pay_test_8",
+        "amount": 10958,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T23:08:34.949780",
+        "payment_id": "pay_test_8",
+        "amount": 10958,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T23:08:34.988279",
+        "payment_id": "pay_test_8",
+        "amount": 10958,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T23:12:02.694334",
+        "payment_id": "pay_test_8",
+        "amount": 10958,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T23:12:02.748194",
+        "payment_id": "pay_test_8",
+        "amount": 10958,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T23:20:18.357769",
+        "payment_id": "pay_test_11",
+        "amount": 90233,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T23:20:29.307770",
+        "payment_id": "pay_test_8",
+        "amount": 10958,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T23:20:41.937395",
+        "payment_id": "pay_test_11",
+        "amount": 90233,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T23:26:22.812581",
+        "payment_id": "pay_test_11",
+        "amount": 90233,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T23:31:09.960327",
+        "payment_id": "pay_test_11",
+        "amount": 90233,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T23:31:14.841897",
+        "payment_id": "pay_test_11",
+        "amount": 90233,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T23:31:22.145704",
+        "payment_id": "pay_test_11",
+        "amount": 90233,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T23:31:24.805566",
+        "payment_id": "pay_test_11",
+        "amount": 90233,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T23:31:26.865889",
+        "payment_id": "pay_test_11",
+        "amount": 90233,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T23:31:27.111278",
+        "payment_id": "pay_test_11",
+        "amount": 90233,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T23:31:27.326912",
+        "payment_id": "pay_test_11",
+        "amount": 90233,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T23:31:27.490774",
+        "payment_id": "pay_test_11",
+        "amount": 90233,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T23:31:27.702488",
+        "payment_id": "pay_test_11",
+        "amount": 90233,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T23:40:34.089121",
+        "payment_id": "pay_test_11",
+        "amount": 90233,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T23:40:38.271667",
+        "payment_id": "pay_test_11",
+        "amount": 90233,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T23:40:42.074980",
+        "payment_id": "pay_test_11",
+        "amount": 90233,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T23:41:08.698978",
+        "payment_id": "pay_test_8",
+        "amount": 10958,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T23:41:10.347741",
+        "payment_id": "pay_test_8",
+        "amount": 10958,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T23:48:44.032291",
+        "payment_id": "pay_test_8",
+        "amount": 10958,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T23:51:07.919424",
+        "payment_id": "pay_test_11",
+        "amount": 90233,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T23:51:47.472669",
+        "payment_id": "pay_test_11",
+        "amount": 90233,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T23:51:47.510578",
+        "payment_id": "pay_test_11",
+        "amount": 90233,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T23:51:55.583688",
+        "payment_id": "pay_test_11",
+        "amount": 90233,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T23:52:38.209107",
+        "payment_id": "pay_test_11",
+        "amount": 90233,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T23:52:38.232397",
+        "payment_id": "pay_test_11",
+        "amount": 90233,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T23:52:44.316257",
+        "payment_id": "pay_test_11",
+        "amount": 90233,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    },
+    {
+        "timestamp": "2026-08-26T23:52:49.574357",
+        "payment_id": "pay_test_11",
+        "amount": 90233,
+        "action": "RETRY_WITH_APPROVAL",
+        "status": "pending_approval",
+        "message": "Merchant approval required before retry."
+    }
+]
