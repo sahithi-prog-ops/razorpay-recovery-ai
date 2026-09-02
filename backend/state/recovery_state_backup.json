@@ -1,0 +1,30 @@
+{
+  "payments": {
+    "pay_test_15": {
+      "analysis": {
+        "recovery_score": 96,
+        "reasons": [
+          "Customer has a strong payment history.",
+          "Subscription is currently active.",
+          "Customer has high lifetime value.",
+          "Payment has limited previous retry attempts."
+        ],
+        "recovery_probability": 0.9603,
+        "risk_level": "LOW",
+        "root_cause": "Payment failed for an unspecified or processor-level reason.",
+        "recommendation": "RETRY",
+        "reasoning": [
+          "Customer has a strong payment history.",
+          "Subscription is currently active.",
+          "Customer has high lifetime value.",
+          "Payment has limited previous retry attempts."
+        ],
+        "ai_engine": "sklearn"
+      },
+      "payment_id": "pay_test_15",
+      "updated_at": "2026-09-01T16:58:34.038588"
+    }
+  },
+  "audit_log": [],
+  "escalations": {}
+}

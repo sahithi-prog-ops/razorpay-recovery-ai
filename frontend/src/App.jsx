@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
 import "./App.css";
 
-const API = "http://127.0.0.1:8000";
+const API = "http://127.0.0.1:8001";
 
 function cleanText(value) {
-  if (value === null || value === undefined) return "";
+  if (value === null || value === undefined) {
+    return "";
+  }
 
   return String(value)
     .replace(/â€”/g, "-")
@@ -18,6 +20,22 @@ function cleanText(value) {
 
 function formatCurrency(amount) {
   return `₹${Number(amount || 0).toLocaleString("en-IN")}`;
+}
+
+function formatProbability(value) {
+  const number = Number(value);
+
+  if (!Number.isFinite(number)) {
+    return "-";
+  }
+
+  // Backend recovery_score is already 0-100.
+  // recovery_probability is 0-1.
+  if (number <= 1) {
+    return `${(number * 100).toFixed(1)}%`;
+  }
+
+  return `${number.toFixed(0)}%`;
 }
 
 function statusClass(status) {
@@ -36,6 +54,12 @@ function statusClass(status) {
 
     case "no_action":
       return "status neutral";
+
+    case "blocked":
+      return "status rejected";
+
+    case "failed":
+      return "status rejected";
 
     default:
       return "status neutral";
@@ -58,6 +82,12 @@ function statusLabel(status) {
 
     case "no_action":
       return "No Action";
+
+    case "blocked":
+      return "Blocked";
+
+    case "failed":
+      return "Failed";
 
     default:
       return status || "Unknown";
@@ -145,6 +175,38 @@ function App() {
   const [backendConnected, setBackendConnected] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
+  /*
+   * ---------------------------------------------------------
+   * LOAD RAZORPAY CHECKOUT SCRIPT
+   * ---------------------------------------------------------
+   */
+
+  function loadRazorpayScript() {
+    return new Promise((resolve) => {
+      if (window.Razorpay) {
+        resolve(true);
+        return;
+      }
+
+      const script = document.createElement("script");
+
+      script.src =
+        "https://checkout.razorpay.com/v1/checkout.js";
+
+      script.onload = () => resolve(true);
+
+      script.onerror = () => resolve(false);
+
+      document.body.appendChild(script);
+    });
+  }
+
+  /*
+   * ---------------------------------------------------------
+   * GENERIC API FUNCTION
+   * ---------------------------------------------------------
+   */
+
   async function apiFetch(path, options = {}) {
     const response = await fetch(`${API}${path}`, {
       ...options,
@@ -161,7 +223,11 @@ function App() {
         const data = await response.json();
 
         if (data?.detail) {
-          message += `: ${data.detail}`;
+          if (typeof data.detail === "string") {
+            message += `: ${data.detail}`;
+          } else if (data.detail?.message) {
+            message += `: ${data.detail.message}`;
+          }
         }
       } catch {
         // Ignore invalid error JSON.
@@ -172,6 +238,12 @@ function App() {
 
     return response.json();
   }
+
+  /*
+   * ---------------------------------------------------------
+   * LOAD DASHBOARD
+   * ---------------------------------------------------------
+   */
 
   async function loadDashboard() {
     setLoading(true);
@@ -186,15 +258,25 @@ function App() {
       setPayments(paymentsData?.payments || []);
 
       setMetrics({
-        revenue_at_risk: metricsData?.revenue_at_risk || 0,
-        recovered_revenue: metricsData?.recovered_revenue || 0,
-        recovery_rate: metricsData?.recovery_rate || 0,
-        pending_approvals: metricsData?.pending_approvals || 0,
+        revenue_at_risk:
+          metricsData?.revenue_at_risk || 0,
+
+        recovered_revenue:
+          metricsData?.recovered_revenue || 0,
+
+        recovery_rate:
+          metricsData?.recovery_rate || 0,
+
+        pending_approvals:
+          metricsData?.pending_approvals || 0,
       });
 
       setBackendConnected(true);
     } catch (error) {
-      console.error("Backend connection error:", error);
+      console.error(
+        "Backend connection error:",
+        error
+      );
 
       setBackendConnected(false);
 
@@ -206,22 +288,41 @@ function App() {
     }
   }
 
+  /*
+   * ---------------------------------------------------------
+   * LOAD PAYMENT DETAILS
+   * ---------------------------------------------------------
+   */
+
   async function loadPaymentDetails(paymentId) {
     setReviewLoading(true);
     setErrorMessage("");
 
     try {
       const [supportData, auditData] = await Promise.all([
-        apiFetch(`/support/${encodeURIComponent(paymentId)}`),
-        apiFetch(`/audit/${encodeURIComponent(paymentId)}`),
+        apiFetch(
+          `/support/${encodeURIComponent(paymentId)}`
+        ),
+
+        apiFetch(
+          `/audit/${encodeURIComponent(paymentId)}`
+        ),
       ]);
 
       setSupport(supportData);
-      setAudit(auditData?.audit_log || []);
+
+      setAudit(
+        auditData?.audit_log || []
+      );
+
       setSelectedPayment(paymentId);
+
       setBackendConnected(true);
     } catch (error) {
-      console.error("Review error:", error);
+      console.error(
+        "Review error:",
+        error
+      );
 
       setErrorMessage(
         `Unable to load payment ${paymentId}: ${error.message}`
@@ -231,20 +332,38 @@ function App() {
     }
   }
 
+  /*
+   * ---------------------------------------------------------
+   * REFRESH SELECTED PAYMENT
+   * ---------------------------------------------------------
+   */
+
   async function refreshSelectedPayment(paymentId) {
     try {
       const [supportData, auditData] = await Promise.all([
-        apiFetch(`/support/${encodeURIComponent(paymentId)}`),
-        apiFetch(`/audit/${encodeURIComponent(paymentId)}`),
+        apiFetch(
+          `/support/${encodeURIComponent(paymentId)}`
+        ),
+
+        apiFetch(
+          `/audit/${encodeURIComponent(paymentId)}`
+        ),
       ]);
 
       setSupport(supportData);
-      setAudit(auditData?.audit_log || []);
+
+      setAudit(
+        auditData?.audit_log || []
+      );
+
       setSelectedPayment(paymentId);
 
       return true;
     } catch (error) {
-      console.error("Refresh selected payment error:", error);
+      console.error(
+        "Refresh selected payment error:",
+        error
+      );
 
       setErrorMessage(
         `Unable to refresh ${paymentId}: ${error.message}`
@@ -254,69 +373,377 @@ function App() {
     }
   }
 
+  /*
+   * ---------------------------------------------------------
+   * APPROVE RECOVERY
+   * ---------------------------------------------------------
+   */
+
   async function handleApprove() {
-    if (!selectedPayment) return;
+    if (!selectedPayment) {
+      return;
+    }
 
     setActionLoading(true);
     setErrorMessage("");
 
     try {
-      await apiFetch(`/approve/${encodeURIComponent(selectedPayment)}`, {
-        method: "POST",
-      });
+      await apiFetch(
+        `/approve/${encodeURIComponent(
+          selectedPayment
+        )}`,
+        {
+          method: "POST",
+        }
+      );
 
       await loadDashboard();
-      await refreshSelectedPayment(selectedPayment);
-    } catch (error) {
-      console.error("Approve error:", error);
 
-      setErrorMessage(`Approval failed: ${error.message}`);
+      await refreshSelectedPayment(
+        selectedPayment
+      );
+    } catch (error) {
+      console.error(
+        "Approve error:",
+        error
+      );
+
+      setErrorMessage(
+        `Approval failed: ${error.message}`
+      );
     } finally {
       setActionLoading(false);
     }
   }
+
+  /*
+   * ---------------------------------------------------------
+   * REJECT RECOVERY
+   * ---------------------------------------------------------
+   */
 
   async function handleReject() {
-    if (!selectedPayment) return;
+    if (!selectedPayment) {
+      return;
+    }
 
     setActionLoading(true);
     setErrorMessage("");
 
     try {
-      await apiFetch(`/reject/${encodeURIComponent(selectedPayment)}`, {
-        method: "POST",
-      });
+      await apiFetch(
+        `/reject/${encodeURIComponent(
+          selectedPayment
+        )}`,
+        {
+          method: "POST",
+        }
+      );
 
       await loadDashboard();
-      await refreshSelectedPayment(selectedPayment);
-    } catch (error) {
-      console.error("Reject error:", error);
 
-      setErrorMessage(`Rejection failed: ${error.message}`);
+      await refreshSelectedPayment(
+        selectedPayment
+      );
+    } catch (error) {
+      console.error(
+        "Reject error:",
+        error
+      );
+
+      setErrorMessage(
+        `Rejection failed: ${error.message}`
+      );
     } finally {
       setActionLoading(false);
     }
   }
+
+  /*
+   * ---------------------------------------------------------
+   * START RAZORPAY RECOVERY CHECKOUT
+   * ---------------------------------------------------------
+   */
+
+  async function startRecoveryCheckout(payment) {
+    if (!payment?.payment_id) {
+      setErrorMessage(
+        "Invalid payment selected for recovery."
+      );
+
+      return;
+    }
+
+    setActionLoading(true);
+    setErrorMessage("");
+
+    try {
+      /*
+       * STEP 1
+       * Create a NEW Razorpay recovery order.
+       */
+
+      const orderData = await apiFetch(
+        `/recovery/order/${encodeURIComponent(
+          payment.payment_id
+        )}`,
+        {
+          method: "POST",
+        }
+      );
+
+      console.log(
+        "RecoverAI recovery order:",
+        orderData
+      );
+
+      /*
+       * STEP 2
+       * Load Razorpay Checkout.
+       */
+
+      const loaded =
+        await loadRazorpayScript();
+
+      if (!loaded) {
+        throw new Error(
+          "Razorpay Checkout failed to load."
+        );
+      }
+
+      /*
+       * STEP 3
+       * Configure Razorpay Checkout.
+       */
+
+      const options = {
+        key: orderData.key_id,
+
+        amount: orderData.amount,
+
+        currency:
+          orderData.currency || "INR",
+
+        name: "RecoverAI",
+
+        description:
+          `Revenue recovery for ${payment.payment_id}`,
+
+        order_id:
+          orderData.order_id,
+
+        handler: async function (response) {
+          console.log(
+            "Razorpay Checkout response:",
+            response
+          );
+
+          try {
+            /*
+             * STEP 4
+             * Send Razorpay response to backend.
+             */
+
+            const verificationResult =
+              await apiFetch(
+                `/recovery/verify/${encodeURIComponent(
+                  payment.payment_id
+                )}`,
+                {
+                  method: "POST",
+
+                  body: JSON.stringify(
+                    response
+                  ),
+                }
+              );
+
+            console.log(
+              "Recovery verification result:",
+              verificationResult
+            );
+
+            /*
+             * STEP 5
+             * Refresh dashboard and selected payment.
+             */
+
+            await loadDashboard();
+
+            await refreshSelectedPayment(
+              payment.payment_id
+            );
+
+            /*
+             * STEP 6
+             * Display result.
+             */
+
+            if (
+              verificationResult.recovered
+            ) {
+              alert(
+                `Recovery successful! ${formatCurrency(
+                  verificationResult.recovered_amount
+                )} recovered.`
+              );
+            } else {
+              alert(
+                "Payment completed, but RecoverAI could not verify the recovery."
+              );
+            }
+          } catch (error) {
+            console.error(
+              "Recovery verification error:",
+              error
+            );
+
+            setErrorMessage(
+              `Recovery verification failed: ${error.message}`
+            );
+          }
+        },
+
+        modal: {
+          ondismiss: function () {
+            console.log(
+              "Razorpay recovery checkout closed."
+            );
+          },
+        },
+
+        theme: {
+          color: "#111827",
+        },
+      };
+
+      /*
+       * STEP 7
+       * Create Razorpay instance.
+       */
+
+      const razorpay =
+        new window.Razorpay(options);
+
+      /*
+       * Handle payment failure.
+       */
+
+      razorpay.on(
+        "payment.failed",
+        function (response) {
+          console.error(
+            "Razorpay recovery payment failed:",
+            response
+          );
+
+          const description =
+            response?.error?.description ||
+            "Recovery payment failed.";
+
+          setErrorMessage(
+            `Recovery payment failed: ${description}`
+          );
+        }
+      );
+
+      /*
+       * STEP 8
+       * Open Razorpay Checkout.
+       */
+
+      razorpay.open();
+    } catch (error) {
+      console.error(
+        "Unable to start recovery:",
+        error
+      );
+
+      setErrorMessage(
+        `Unable to start recovery: ${error.message}`
+      );
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  /*
+   * ---------------------------------------------------------
+   * INITIAL LOAD
+   * ---------------------------------------------------------
+   */
 
   useEffect(() => {
     loadDashboard();
   }, []);
 
+  /*
+   * ---------------------------------------------------------
+   * DERIVED DATA
+   * ---------------------------------------------------------
+   */
+
   const analysis = support || {};
 
-  const verification = analysis.verification || {};
-  const checks = verification.checks || {};
+  const verification =
+    analysis.verification || {};
 
-  const policy = analysis.policy_decision || {};
+  const checks =
+    verification.checks || {};
 
-  const escalations = Array.isArray(analysis.escalations)
-    ? analysis.escalations
-    : [];
+  const policy =
+    analysis.policy_decision || {};
+
+  const escalations =
+    Array.isArray(analysis.escalations)
+      ? analysis.escalations
+      : [];
 
   const reasons =
     analysis?.analysis?.reasons ||
     analysis?.reasons ||
     [];
+
+  /*
+   * Find the currently selected payment
+   * from the payments returned by the backend.
+   */
+
+  const selectedPaymentData = payments.find(
+    (payment) =>
+      payment.payment_id === selectedPayment
+  );
+
+  /*
+   * RecoverAI can start recovery when:
+   *
+   * 1. Original payment is failed
+   * 2. AI recommends RETRY
+   *
+   * OR
+   *
+   * 3. Policy explicitly says retry_payment
+   */
+
+  const canStartRecovery =
+    String(
+      analysis.current_status || ""
+    ).toLowerCase() === "failed" &&
+    (
+      String(
+        analysis.recommendation || ""
+      ).toLowerCase() === "retry" ||
+
+      String(
+        policy.action || ""
+      ).toLowerCase() === "retry_payment"
+    );
+
+  /*
+   * ---------------------------------------------------------
+   * UI
+   * ---------------------------------------------------------
+   */
 
   return (
     <div className="app">
@@ -372,8 +799,13 @@ function App() {
           <div className="agent-dot"></div>
 
           <div>
-            <strong>Agent Active</strong>
-            <span>Monitoring payments</span>
+            <strong>
+              Agent Active
+            </strong>
+
+            <span>
+              Monitoring payments
+            </span>
           </div>
 
         </div>
@@ -387,11 +819,15 @@ function App() {
         <header className="page-header">
 
           <div>
-            <h1>Revenue Recovery</h1>
+
+            <h1>
+              Revenue Recovery
+            </h1>
 
             <p>
               Autonomous payment recovery intelligence
             </p>
+
           </div>
 
           <button
@@ -412,11 +848,12 @@ function App() {
           </div>
         )}
 
-        {!errorMessage && backendConnected && (
-          <div className="connection-success">
-            ✓ RecoverAI backend connected
-          </div>
-        )}
+        {!errorMessage &&
+          backendConnected && (
+            <div className="connection-success">
+              ✓ RecoverAI backend connected
+            </div>
+          )}
 
         {/* METRICS */}
 
@@ -425,15 +862,21 @@ function App() {
           <div className="metric-card">
 
             <div className="metric-top">
-              <span>Revenue at Risk</span>
+
+              <span>
+                Revenue at Risk
+              </span>
 
               <span className="metric-icon danger">
                 ₹
               </span>
+
             </div>
 
             <strong>
-              {formatCurrency(metrics.revenue_at_risk)}
+              {formatCurrency(
+                metrics.revenue_at_risk
+              )}
             </strong>
 
             <small>
@@ -445,15 +888,21 @@ function App() {
           <div className="metric-card">
 
             <div className="metric-top">
-              <span>Recovered Revenue</span>
+
+              <span>
+                Recovered Revenue
+              </span>
 
               <span className="metric-icon success">
                 ✓
               </span>
+
             </div>
 
             <strong>
-              {formatCurrency(metrics.recovered_revenue)}
+              {formatCurrency(
+                metrics.recovered_revenue
+              )}
             </strong>
 
             <small>
@@ -465,15 +914,22 @@ function App() {
           <div className="metric-card">
 
             <div className="metric-top">
-              <span>Recovery Rate</span>
+
+              <span>
+                Recovery Rate
+              </span>
 
               <span className="metric-icon purple">
                 %
               </span>
+
             </div>
 
             <strong>
-              {Number(metrics.recovery_rate || 0).toFixed(1)}%
+              {Number(
+                metrics.recovery_rate || 0
+              ).toFixed(1)}
+              %
             </strong>
 
             <small>
@@ -485,11 +941,15 @@ function App() {
           <div className="metric-card">
 
             <div className="metric-top">
-              <span>Pending Approvals</span>
+
+              <span>
+                Pending Approvals
+              </span>
 
               <span className="metric-icon warning">
                 !
               </span>
+
             </div>
 
             <strong>
@@ -515,11 +975,15 @@ function App() {
             <div className="panel-header">
 
               <div>
-                <h2>Recovery Opportunities</h2>
+
+                <h2>
+                  Payment Recovery Monitor
+                </h2>
 
                 <p>
-                  Payments identified as recoverable
+                  Failed payments and their recovery status
                 </p>
+
               </div>
 
               <span className="count-badge">
@@ -535,114 +999,155 @@ function App() {
                 <thead>
 
                   <tr>
-                    <th>Payment</th>
-                    <th>Amount</th>
-                    <th>Failure</th>
-                    <th>Probability</th>
-                    <th>Status</th>
-                    <th>Action</th>
+
+                    <th>
+                      Payment
+                    </th>
+
+                    <th>
+                      Amount
+                    </th>
+
+                    <th>
+                      Failure
+                    </th>
+
+                    <th>
+                      Probability
+                    </th>
+
+                    <th>
+                      Status
+                    </th>
+
+                    <th>
+                      Action
+                    </th>
+
                   </tr>
 
                 </thead>
 
                 <tbody>
 
-                  {payments.map((payment) => (
+                  {payments.map(
+                    (payment) => (
 
-                    <tr
-                      key={payment.payment_id}
-                      className={
-                        selectedPayment === payment.payment_id
-                          ? "row-selected"
-                          : ""
-                      }
-                    >
-
-                      <td>
-
-                        <div className="payment-id">
-                          {payment.payment_id}
-                        </div>
-
-                        {payment.customer_id && (
-                          <div className="customer-id">
-                            {payment.customer_id}
-                          </div>
-                        )}
-
-                      </td>
-
-                      <td>
-                        <strong>
-                          {formatCurrency(payment.amount)}
-                        </strong>
-                      </td>
-
-                      <td>
-                        {cleanText(
-                          payment.failure_reason || "-"
-                        )}
-                      </td>
-
-                      <td>
-                        <strong>
-                          {Number(
-                            payment.recovery_probability || 0
-                          )}
-                          %
-                        </strong>
-                      </td>
-
-                      <td>
-
-                        <span
-                          className={statusClass(
-                            payment.status
-                          )}
-                        >
-                          {statusLabel(payment.status)}
-                        </span>
-
-                      </td>
-
-                      <td>
-
-                        <button
-                          className="review-button"
-                          onClick={() =>
-                            loadPaymentDetails(
-                              payment.payment_id
-                            )
-                          }
-                          disabled={reviewLoading}
-                        >
-                          {reviewLoading &&
+                      <tr
+                        key={
+                          payment.payment_id
+                        }
+                        className={
                           selectedPayment ===
-                            payment.payment_id
-                            ? "Loading..."
-                            : "Review"}
-                        </button>
-
-                      </td>
-
-                    </tr>
-
-                  ))}
-
-                  {!loading && payments.length === 0 && (
-
-                    <tr>
-
-                      <td
-                        colSpan="6"
-                        className="empty-state"
+                          payment.payment_id
+                            ? "row-selected"
+                            : ""
+                        }
                       >
-                        No payments found.
-                      </td>
 
-                    </tr>
+                        <td>
 
+                          <div className="payment-id">
+                            {
+                              payment.payment_id
+                            }
+                          </div>
+
+                          {payment.customer_id && (
+                            <div className="customer-id">
+                              {
+                                payment.customer_id
+                              }
+                            </div>
+                          )}
+
+                        </td>
+
+                        <td>
+
+                          <strong>
+                            {formatCurrency(
+                              payment.amount
+                            )}
+                          </strong>
+
+                        </td>
+
+                        <td>
+
+                          {cleanText(
+                            payment.failure_reason ||
+                              "-"
+                          )}
+
+                        </td>
+
+                        <td>
+
+                          <strong>
+                            {formatProbability(
+                              payment.recovery_probability
+                            )}
+                          </strong>
+
+                        </td>
+
+                        <td>
+
+                          <span
+                            className={statusClass(
+                              payment.status
+                            )}
+                          >
+                            {statusLabel(
+                              payment.status
+                            )}
+                          </span>
+
+                        </td>
+
+                        <td>
+
+                          <button
+                            className="review-button"
+                            onClick={() =>
+                              loadPaymentDetails(
+                                payment.payment_id
+                              )
+                            }
+                            disabled={
+                              reviewLoading
+                            }
+                          >
+                            {reviewLoading &&
+                            selectedPayment ===
+                              payment.payment_id
+                              ? "Loading..."
+                              : "Review"}
+                          </button>
+
+                        </td>
+
+                      </tr>
+
+                    )
                   )}
+
+                  {!loading &&
+                    payments.length === 0 && (
+
+                      <tr>
+
+                        <td
+                          colSpan="6"
+                          className="empty-state"
+                        >
+                          No payments found.
+                        </td>
+
+                      </tr>
+
+                    )}
 
                 </tbody>
 
@@ -660,7 +1165,9 @@ function App() {
 
               <div>
 
-                <h2>AI Recovery Agent</h2>
+                <h2>
+                  AI Recovery Agent
+                </h2>
 
                 <p>
                   Webhook → AI → Policy → Action →
@@ -670,8 +1177,11 @@ function App() {
               </div>
 
               <span className="live-indicator">
+
                 <span></span>
+
                 LIVE
+
               </span>
 
             </div>
@@ -689,10 +1199,10 @@ function App() {
                 </h3>
 
                 <p>
-                  Choose a recovery opportunity to see
-                  the agent's full analysis, policy
-                  decision, recovery action,
-                  verification result, and audit trail.
+                  Choose a payment to see the agent's
+                  analysis, policy decision, recovery
+                  action, verification result, and
+                  audit trail.
                 </p>
 
               </div>
@@ -706,11 +1216,15 @@ function App() {
                 <div className="selected-payment">
 
                   <div>
-                    <span>Analysis</span>
+
+                    <span>
+                      Analysis
+                    </span>
 
                     <strong>
                       {selectedPayment}
                     </strong>
+
                   </div>
 
                   <span
@@ -727,8 +1241,10 @@ function App() {
 
                 {/* RECOVERED AMOUNT */}
 
-                {analysis.recovered_amount !== null &&
-                  analysis.recovered_amount !== undefined && (
+                {analysis.recovered_amount !==
+                  null &&
+                  analysis.recovered_amount !==
+                    undefined && (
 
                     <div className="recovered-banner">
 
@@ -751,8 +1267,13 @@ function App() {
                 <div className="agent-section">
 
                   <div className="section-title">
-                    <span>01</span>
+
+                    <span>
+                      01
+                    </span>
+
                     AI Analysis
+
                   </div>
 
                   <div className="analysis-grid">
@@ -764,13 +1285,10 @@ function App() {
                       </label>
 
                       <strong>
-                        {analysis.recovery_score ??
-                          analysis.recovery_probability ??
-                          "-"}
-                        {analysis.recovery_score !== null &&
-                        analysis.recovery_score !== undefined
-                          ? "%"
-                          : ""}
+                        {formatProbability(
+                          analysis.recovery_score ??
+                            analysis.recovery_probability
+                        )}
                       </strong>
 
                     </div>
@@ -783,7 +1301,8 @@ function App() {
 
                       <strong>
                         {cleanText(
-                          analysis.risk_level || "-"
+                          analysis.risk_level ||
+                            "-"
                         )}
                       </strong>
 
@@ -797,7 +1316,8 @@ function App() {
 
                       <strong>
                         {cleanText(
-                          analysis.recommendation || "-"
+                          analysis.recommendation ||
+                            "-"
                         )}
                       </strong>
 
@@ -811,7 +1331,8 @@ function App() {
 
                       <strong>
                         {cleanText(
-                          analysis.ai_engine || "-"
+                          analysis.ai_engine ||
+                            "-"
                         )}
                       </strong>
 
@@ -830,10 +1351,17 @@ function App() {
                       <ul>
 
                         {reasons.map(
-                          (reason, index) => (
+                          (
+                            reason,
+                            index
+                          ) => (
 
-                            <li key={index}>
-                              {cleanText(reason)}
+                            <li
+                              key={index}
+                            >
+                              {cleanText(
+                                reason
+                              )}
                             </li>
 
                           )
@@ -852,8 +1380,13 @@ function App() {
                 <div className="agent-section">
 
                   <div className="section-title">
-                    <span>02</span>
+
+                    <span>
+                      02
+                    </span>
+
                     Policy Decision
+
                   </div>
 
                   <div className="policy-card">
@@ -866,7 +1399,8 @@ function App() {
 
                       <strong>
                         {cleanText(
-                          policy.action || "-"
+                          policy.action ||
+                            "-"
                         )}
                       </strong>
 
@@ -888,7 +1422,9 @@ function App() {
 
                     {policy.reason && (
                       <p>
-                        {cleanText(policy.reason)}
+                        {cleanText(
+                          policy.reason
+                        )}
                       </p>
                     )}
 
@@ -901,8 +1437,13 @@ function App() {
                 <div className="agent-section">
 
                   <div className="section-title">
-                    <span>03</span>
+
+                    <span>
+                      03
+                    </span>
+
                     Recovery Action
+
                   </div>
 
                   <div className="recovery-card">
@@ -913,7 +1454,8 @@ function App() {
 
                     <strong>
                       {cleanText(
-                        analysis.action_taken || "-"
+                        analysis.action_taken ||
+                          "-"
                       )}
                     </strong>
 
@@ -926,8 +1468,13 @@ function App() {
                 <div className="agent-section">
 
                   <div className="section-title">
-                    <span>04</span>
+
+                    <span>
+                      04
+                    </span>
+
                     Verification
+
                   </div>
 
                   <div
@@ -941,15 +1488,20 @@ function App() {
                     <div className="verification-header">
 
                       <strong>
+
                         {verification.verified
                           ? "✓ Verified"
                           : "✕ Verification Failed"}
+
                       </strong>
 
                       <span>
+
                         {cleanText(
-                          verification.message || ""
+                          verification.message ||
+                            ""
                         )}
+
                       </span>
 
                     </div>
@@ -961,40 +1513,45 @@ function App() {
                           "action_is_retry_payment",
                           "Action is retry payment",
                         ],
+
                         [
                           "amount_recorded",
                           "Amount recorded",
                         ],
+
                         [
                           "processor_confirmed",
                           "Processor confirmed",
                         ],
+
                         [
                           "amount_matches_expected",
                           "Amount matches expected",
                         ],
-                      ].map(([key, label]) => (
+                      ].map(
+                        ([key, label]) => (
 
-                        <div
-                          className={
-                            checks[key]
-                              ? "check pass"
-                              : "check fail"
-                          }
-                          key={key}
-                        >
+                          <div
+                            className={
+                              checks[key]
+                                ? "check pass"
+                                : "check fail"
+                            }
+                            key={key}
+                          >
 
-                          <span>
-                            {checks[key]
-                              ? "✓"
-                              : "✕"}
-                          </span>
+                            <span>
+                              {checks[key]
+                                ? "✓"
+                                : "✕"}
+                            </span>
 
-                          {label}
+                            {label}
 
-                        </div>
+                          </div>
 
-                      ))}
+                        )
+                      )}
 
                     </div>
 
@@ -1004,13 +1561,19 @@ function App() {
 
                 {/* ESCALATIONS */}
 
-                {escalations.length > 0 && (
+                {escalations.length >
+                  0 && (
 
                   <div className="agent-section">
 
                     <div className="section-title">
-                      <span>05</span>
+
+                      <span>
+                        05
+                      </span>
+
                       Escalation
+
                     </div>
 
                     {escalations.map(
@@ -1040,30 +1603,39 @@ function App() {
                           </div>
 
                           <p>
+
                             <strong>
                               Reason:
                             </strong>{" "}
+
                             {cleanText(
                               escalation.reason
                             )}
+
                           </p>
 
                           <p>
+
                             <strong>
                               Status:
                             </strong>{" "}
+
                             {cleanText(
                               escalation.status
                             )}
+
                           </p>
 
                           <p>
+
                             <strong>
                               Recommended:
                             </strong>{" "}
+
                             {cleanText(
                               escalation.recommended_action
                             )}
+
                           </p>
 
                         </div>
@@ -1101,8 +1673,12 @@ function App() {
 
                     <button
                       className="approve-button"
-                      onClick={handleApprove}
-                      disabled={actionLoading}
+                      onClick={
+                        handleApprove
+                      }
+                      disabled={
+                        actionLoading
+                      }
                     >
                       {actionLoading
                         ? "Processing..."
@@ -1111,8 +1687,12 @@ function App() {
 
                     <button
                       className="reject-button"
-                      onClick={handleReject}
-                      disabled={actionLoading}
+                      onClick={
+                        handleReject
+                      }
+                      disabled={
+                        actionLoading
+                      }
                     >
                       {actionLoading
                         ? "Processing..."
@@ -1125,8 +1705,8 @@ function App() {
 
                   <div className="action-status-note">
 
-                    No merchant action is available for
-                    this payment because its current
+                    No merchant action is available
+                    for this payment because its current
                     status is{" "}
 
                     <strong>
@@ -1141,16 +1721,91 @@ function App() {
 
                 )}
 
+                {/* REAL RAZORPAY RECOVERY */}
+
+                {canStartRecovery && (
+
+                  <div className="agent-section">
+
+                    <div className="section-title">
+
+                      <span>
+                        07
+                      </span>
+
+                      Revenue Recovery
+
+                    </div>
+
+                    <div className="recovery-card">
+
+                      <label>
+                        Recover this failed payment
+                      </label>
+
+                      <strong>
+                        {formatCurrency(
+                          selectedPaymentData?.amount ||
+                            analysis.amount ||
+                            0
+                        )}
+                      </strong>
+
+                     <td>
+  <div className="payment-actions">
+
+    {/* Review */}
+    <button
+      className="review-button"
+      onClick={() =>
+        loadPaymentDetails(payment.payment_id)
+      }
+      disabled={reviewLoading || actionLoading}
+    >
+      {reviewLoading &&
+      selectedPayment === payment.payment_id
+        ? "Loading..."
+        : "Review"}
+    </button>
+
+    {/* Recover - ONLY for failed payments */}
+    {String(payment.status || "").toLowerCase() === "failed" && (
+     <button
+  className="review-button"
+  onClick={() => loadPaymentDetails(payment.payment_id)}
+  disabled={reviewLoading}
+>
+  {reviewLoading && selectedPayment === payment.payment_id
+    ? "Loading..."
+    : "Review →"}
+</button>
+    )}
+
+  </div>
+</td>
+
+                    </div>
+
+                  </div>
+
+                )}
+
                 {/* AUDIT */}
 
                 <div className="agent-section">
 
                   <div className="section-title">
-                    <span>06</span>
+
+                    <span>
+                      06
+                    </span>
+
                     Audit Trail
+
                   </div>
 
-                  {audit.length === 0 ? (
+                  {audit.length ===
+                  0 ? (
 
                     <div className="audit-empty">
                       No audit events found.
@@ -1161,10 +1816,15 @@ function App() {
                     <div className="audit-timeline">
 
                       {audit.map(
-                        (event, index) => {
+                        (
+                          event,
+                          index
+                        ) => {
 
                           const type =
-                            auditType(event.event);
+                            auditType(
+                              event.event
+                            );
 
                           return (
 
@@ -1174,9 +1834,11 @@ function App() {
                             >
 
                               <div className="audit-marker">
+
                                 {auditIcon(
                                   event.event
                                 )}
+
                               </div>
 
                               <div className="audit-body">
@@ -1200,7 +1862,8 @@ function App() {
                                 {event.details &&
                                   Object.keys(
                                     event.details
-                                  ).length > 0 && (
+                                  ).length >
+                                    0 && (
 
                                     <pre>
                                       {JSON.stringify(
@@ -1254,7 +1917,9 @@ function App() {
 
             <div className="pipeline-step">
 
-              <span>01</span>
+              <span>
+                01
+              </span>
 
               <strong>
                 Detect
@@ -1271,7 +1936,9 @@ function App() {
 
             <div className="pipeline-step">
 
-              <span>02</span>
+              <span>
+                02
+              </span>
 
               <strong>
                 Analyze
@@ -1288,7 +1955,9 @@ function App() {
 
             <div className="pipeline-step">
 
-              <span>03</span>
+              <span>
+                03
+              </span>
 
               <strong>
                 Decide
@@ -1304,7 +1973,9 @@ function App() {
 
             <div className="pipeline-step">
 
-              <span>04</span>
+              <span>
+                04
+              </span>
 
               <strong>
                 Recover

@@ -10,29 +10,20 @@ from state_manager import get_payment_state
 CUSTOMER_DB = {
 
     "cus_test_8": {
-
         "successful_payments": 14,
-
         "failed_payments": 2,
-
         "lifetime_value": 42500,
     },
 
     "cus_test_11": {
-
         "successful_payments": 3,
-
         "failed_payments": 5,
-
         "lifetime_value": 12800,
     },
 
     "cus_test_demo": {
-
         "successful_payments": 8,
-
         "failed_payments": 1,
-
         "lifetime_value": 27600,
     },
 }
@@ -45,23 +36,17 @@ CUSTOMER_DB = {
 SUBSCRIPTION_DB = {
 
     "cus_test_8": {
-
         "status": "active",
-
         "previous_failures": 1,
     },
 
     "cus_test_11": {
-
         "status": "active",
-
         "previous_failures": 3,
     },
 
     "cus_test_demo": {
-
         "status": "active",
-
         "previous_failures": 0,
     },
 }
@@ -72,6 +57,13 @@ SUBSCRIPTION_DB = {
 # =========================================================
 
 def _derive_customer_profile(customer_id):
+
+    """
+    Creates deterministic customer information for customers
+    that are not present in the mock CUSTOMER_DB.
+
+    The same customer_id always produces the same profile.
+    """
 
     seed = int(
         hashlib.sha256(
@@ -99,6 +91,11 @@ def _derive_customer_profile(customer_id):
 
 def _derive_subscription_profile(customer_id):
 
+    """
+    Creates deterministic subscription information when the
+    customer does not exist in SUBSCRIPTION_DB.
+    """
+
     seed = int(
         hashlib.sha256(
             (customer_id + "sub").encode()
@@ -125,40 +122,29 @@ def _derive_subscription_profile(customer_id):
 def create_plan(payment_id):
 
     """
-    Builds the recovery context for a payment already
-    registered in state_manager.
+    Builds a recovery plan from payment state.
 
-    Planner responsibilities:
-
-    1. Load payment state
-    2. Build payment context
-    3. Resolve customer context
-    4. Resolve subscription context
-
-    The planner does NOT perform AI analysis
-    and does NOT make the policy decision.
+    The payment must already exist in state_manager.
+    This prevents the AI from inventing payments that were
+    never received through the recovery pipeline.
     """
 
     record = get_payment_state(payment_id)
 
     if not record:
-
         return None
 
     # -----------------------------------------------------
-    # CUSTOMER
+    # Customer
     # -----------------------------------------------------
 
     customer_id = (
-
         record.get("customer_id")
-
-        or
-        f"{payment_id}_unknown_customer"
+        or f"{payment_id}_unknown_customer"
     )
 
     # -----------------------------------------------------
-    # PAYMENT
+    # Payment
     # -----------------------------------------------------
 
     payment = {
@@ -170,16 +156,10 @@ def create_plan(payment_id):
             customer_id,
 
         "amount":
-            record.get(
-                "amount",
-                0
-            ),
+            record.get("amount", 0),
 
         "currency":
-            record.get(
-                "currency",
-                "INR"
-            ),
+            record.get("currency", "INR"),
 
         "failure_reason":
             record.get(
@@ -195,7 +175,7 @@ def create_plan(payment_id):
     }
 
     # -----------------------------------------------------
-    # CUSTOMER CONTEXT
+    # Customer context
     # -----------------------------------------------------
 
     customer = CUSTOMER_DB.get(
@@ -209,7 +189,7 @@ def create_plan(payment_id):
         )
 
     # -----------------------------------------------------
-    # SUBSCRIPTION CONTEXT
+    # Subscription context
     # -----------------------------------------------------
 
     subscription = SUBSCRIPTION_DB.get(
@@ -223,7 +203,7 @@ def create_plan(payment_id):
         )
 
     # -----------------------------------------------------
-    # FINAL PLAN
+    # Final plan
     # -----------------------------------------------------
 
     return {

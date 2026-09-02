@@ -1,51 +1,159 @@
-def evaluate_policy(payment, analysis):
+# =========================================================
+# RECOVERY POLICY ENGINE
+# =========================================================
 
-    recovery_score = analysis["recovery_score"]
-    recommendation = analysis["recommendation"]
+# Minimum probability for automatic recovery.
+AUTO_RETRY_THRESHOLD = 0.80
 
-    failure_reason = payment.get("failure_reason")
+# Minimum probability where merchant approval can be useful.
+APPROVAL_THRESHOLD = 0.40
 
-    # Payment methods that normally require customer intervention
-    high_risk_reasons = [
-        "expired_card",
-        "card_declined"
-    ]
+# Maximum number of recovery attempts allowed.
+MAX_RECOVERY_ATTEMPTS = 2
 
-    # Never automatically retry these
-    if failure_reason in high_risk_reasons:
+
+def _probability(analysis):
+
+    probability = analysis.get(
+        "recovery_probability",
+        0
+    )
+
+    try:
+        return float(probability)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def evaluate_policy(
+    payment,
+    analysis
+):
+
+    probability = _probability(
+        analysis
+    )
+
+    retry_count = payment.get(
+        "retry_count",
+        0
+    )
+
+    failure_reason = (
+        payment.get(
+            "failure_reason"
+        )
+        or "unknown"
+    )
+
+    # =====================================================
+    # HARD SAFETY GUARD
+    # =====================================================
+
+    if retry_count >= MAX_RECOVERY_ATTEMPTS:
 
         return {
-            "action": "RETRY_WITH_APPROVAL",
-            "requires_merchant_approval": True,
-            "reason": (
-                f"Failure reason '{failure_reason}' requires "
-                "additional review before retry."
-            )
+
+            "action":
+                "DO_NOT_RETRY",
+
+            "requires_merchant_approval":
+                False,
+
+            "reason":
+                "Recovery attempt limit reached.",
+
+            "guardrail":
+                "MAX_RETRY_LIMIT",
+
+            "max_attempts":
+                MAX_RECOVERY_ATTEMPTS,
+
+            "current_attempt":
+                retry_count
         }
 
-    # High-confidence recoverable payment
-    if recovery_score >= 80 and recommendation == "RETRY":
+    # =====================================================
+    # VERY LOW PROBABILITY
+    # =====================================================
+
+    if probability < APPROVAL_THRESHOLD:
 
         return {
-            "action": "AUTO_RETRY",
-            "requires_merchant_approval": False,
-            "reason": "High probability of successful recovery."
+
+            "action":
+                "DO_NOT_RETRY",
+
+            "requires_merchant_approval":
+                False,
+
+            "reason":
+                "Recovery probability is below the safe intervention threshold.",
+
+            "guardrail":
+                "LOW_PROBABILITY",
+
+            "probability":
+                probability,
+
+            "failure_reason":
+                failure_reason
         }
 
-    # Medium confidence
-    elif recovery_score >= 60 and recommendation == "RETRY":
+    # =====================================================
+    # HIGH PROBABILITY
+    # =====================================================
+
+    if probability >= AUTO_RETRY_THRESHOLD:
 
         return {
-            "action": "RETRY_WITH_APPROVAL",
-            "requires_merchant_approval": True,
-            "reason": "Recovery is possible, but merchant approval is required."
+
+            "action":
+                "AUTO_RETRY",
+
+            "requires_merchant_approval":
+                False,
+
+            "reason":
+                "High probability of successful recovery.",
+
+            "guardrail":
+                "AUTO_RETRY_ALLOWED",
+
+            "probability":
+                probability,
+
+            "failure_reason":
+                failure_reason,
+
+            "max_attempts":
+                MAX_RECOVERY_ATTEMPTS
         }
 
-    # Low confidence
-    else:
+    # =====================================================
+    # MEDIUM PROBABILITY
+    # =====================================================
 
-        return {
-            "action": "DO_NOT_RETRY",
-            "requires_merchant_approval": True,
-            "reason": "Recovery probability is too low for automatic retry."
-        }
+    return {
+
+        "action":
+            "RETRY_WITH_APPROVAL",
+
+        "requires_merchant_approval":
+            True,
+
+        "reason":
+            "Recovery probability is moderate; merchant approval is required before retry.",
+
+        "guardrail":
+            "MERCHANT_APPROVAL_REQUIRED",
+
+        "probability":
+            probability,
+
+        "failure_reason":
+            failure_reason,
+
+        "max_attempts":
+            MAX_RECOVERY_ATTEMPTS
+    }
