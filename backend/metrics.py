@@ -1,4 +1,4 @@
-from state_manager import get_all_payment_states
+from backend.state_manager import get_all_payment_states
 
 
 def calculate_metrics():

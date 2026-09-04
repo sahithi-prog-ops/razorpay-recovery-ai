@@ -1,761 +1,593 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+
+import {
+  AlertTriangle,
+  Bot,
+  CheckCircle2,
+  ChevronRight,
+  CircleDollarSign,
+  Clock,
+  CreditCard,
+  Database,
+  RefreshCw,
+  ShieldCheck,
+  XCircle,
+} from "lucide-react";
+
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+
 import "./App.css";
 
-const API = "http://127.0.0.1:8001";
+// =========================================================
+// BACKEND
+// =========================================================
 
-function cleanText(value) {
-  if (value === null || value === undefined) {
-    return "";
-  }
+const API_BASE_URL = "http://127.0.0.1:8000";
 
-  return String(value)
-    .replace(/â€”/g, "-")
-    .replace(/â€“/g, "-")
-    .replace(/â€™/g, "'")
-    .replace(/â€œ/g, '"')
-    .replace(/â€/g, '"')
-    .replace(/â€¦/g, "...")
-    .replace(/\uFFFD/g, "");
+// =========================================================
+// DEMO DATA
+// Used only when backend is unavailable
+// =========================================================
+
+const DEMO_PAYMENTS = [
+  {
+    payment_id: "pay_TWivUINC3yQh6J",
+    amount: 200,
+    currency: "INR",
+    status: "failed",
+    failure_reason: "payment_failed",
+    retry_count: 0,
+
+    razorpay_payment_id: "pay_TWivUINC3yQh6J",
+    razorpay_method: "netbanking",
+
+    metadata: {
+      network: {
+        bank: "BARB_R",
+        wallet: null,
+        vpa: null,
+        acquirer_data: {
+          bank_transaction_id: null,
+        },
+      },
+
+      user: {
+        international: false,
+        contact: "+918586896584",
+        email: "void@razorpay.com",
+      },
+
+      failure: {
+        error_code: "BAD_REQUEST_ERROR",
+        error_source: "bank",
+        error_step: "payment_authorization",
+        error_reason: "payment_failed",
+        error_description:
+          "Your payment didn't go through as it was declined by the bank.",
+      },
+
+      merchant_notes: {
+        checkout_device: null,
+        cart_session_duration_seconds: null,
+        user_preferred_language: null,
+      },
+
+      raw_notes: {},
+    },
+
+    analysis: {
+      recovery_score: 16,
+      recovery_probability: 0.1627,
+      risk_level: "HIGH",
+      risk_tier: "HIGH",
+      risk_label: "Low Recovery Potential",
+      recommendation: "ESCALATE",
+
+      root_cause:
+        "The payment was declined by the issuing bank during payment authorization.",
+
+      reasons: [
+        "Payment has limited previous retry attempts.",
+        "Razorpay error code: BAD_REQUEST_ERROR.",
+        "Payment failure originated from BANK.",
+        "Failure occurred during PAYMENT_AUTHORIZATION.",
+        "Razorpay failure reason: PAYMENT_FAILED.",
+        "Customer contact information is available for an approved recovery workflow.",
+      ],
+
+      ai_engine: "sklearn",
+    },
+
+    policy: {
+      action: "DO_NOT_RETRY",
+      requires_merchant_approval: false,
+      probability: 0.1627,
+      guardrail: "LOW_PROBABILITY",
+
+      reason:
+        "Recovery probability is below the safe intervention threshold.",
+
+      max_attempts: 2,
+    },
+  },
+
+  {
+    payment_id: "pay_TX67XdhnQ0fEfb",
+    amount: 20000,
+    currency: "INR",
+    status: "failed",
+    failure_reason: "payment_failed",
+    retry_count: 2,
+
+    razorpay_payment_id: "pay_TX67XdhnQ0fEfb",
+    razorpay_method: "netbanking",
+
+    metadata: {
+      network: {
+        bank: "BARB_R",
+        wallet: null,
+        vpa: null,
+        acquirer_data: {
+          bank_transaction_id: null,
+        },
+      },
+
+      user: {
+        international: false,
+        contact: "+918586896584",
+        email: "void@razorpay.com",
+      },
+
+      failure: {
+        error_code: "BAD_REQUEST_ERROR",
+        error_source: "bank",
+        error_step: "payment_authorization",
+        error_reason: "payment_failed",
+        error_description:
+          "Your payment didn't go through as it was declined by the bank.",
+      },
+
+      merchant_notes: {
+        checkout_device: null,
+        cart_session_duration_seconds: null,
+        user_preferred_language: null,
+      },
+
+      raw_notes: {
+        source: "RecoverAI",
+        type: "recovery",
+        original_payment_id: "pay_TWivUINC3yQh6J",
+        attempt: "1",
+      },
+    },
+
+    analysis: {
+      recovery_score: 16,
+      recovery_probability: 0.1627,
+      risk_level: "HIGH",
+      risk_tier: "HIGH",
+      risk_label: "Low Recovery Potential",
+      recommendation: "ESCALATE",
+
+      root_cause:
+        "The payment was declined by the issuing bank during payment authorization.",
+
+      reasons: [
+        "Customer has more successful payments than failed payments.",
+        "Customer has high lifetime value.",
+        "Payment has already been retried 2 time(s).",
+        "Razorpay error code: BAD_REQUEST_ERROR.",
+        "Payment failure originated from BANK.",
+        "Failure occurred during PAYMENT_AUTHORIZATION.",
+        "Razorpay failure reason: PAYMENT_FAILED.",
+        "Customer contact information is available for an approved recovery workflow.",
+      ],
+
+      ai_engine: "sklearn",
+    },
+
+    policy: {
+      action: "DO_NOT_RETRY",
+      requires_merchant_approval: false,
+      probability: 0.1627,
+      guardrail: "MAX_ATTEMPTS_REACHED",
+
+      reason: "Recovery attempt limit reached.",
+
+      max_attempts: 2,
+    },
+  },
+];
+
+// =========================================================
+// HELPERS
+// =========================================================
+
+function formatCurrency(amount, currency = "INR") {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency,
+    maximumFractionDigits: 0,
+  }).format(Number(amount || 0));
 }
 
-function formatCurrency(amount) {
-  return `₹${Number(amount || 0).toLocaleString("en-IN")}`;
+function getPaymentId(payment) {
+  return (
+    payment?.payment_id ||
+    payment?.razorpay_payment_id ||
+    payment?.id ||
+    "unknown"
+  );
 }
 
-function formatProbability(value) {
-  const number = Number(value);
-
-  if (!Number.isFinite(number)) {
-    return "-";
-  }
-
-  // Backend recovery_score is already 0-100.
-  // recovery_probability is 0-1.
-  if (number <= 1) {
-    return `${(number * 100).toFixed(1)}%`;
-  }
-
-  return `${number.toFixed(0)}%`;
+function getProbability(payment) {
+  return Number(
+    payment?.analysis?.recovery_probability ??
+      payment?.policy?.probability ??
+      0
+  );
 }
 
-function statusClass(status) {
-  switch (String(status || "").toLowerCase()) {
-    case "recovered":
-      return "status recovered";
-
-    case "pending_approval":
-      return "status pending";
-
-    case "escalated":
-      return "status escalated";
-
-    case "rejected":
-      return "status rejected";
-
-    case "no_action":
-      return "status neutral";
-
-    case "blocked":
-      return "status rejected";
-
-    case "failed":
-      return "status rejected";
-
-    default:
-      return "status neutral";
-  }
+function getRisk(payment) {
+  return (
+    payment?.analysis?.risk_tier ||
+    payment?.analysis?.risk_level ||
+    "HIGH"
+  ).toUpperCase();
 }
 
-function statusLabel(status) {
-  switch (String(status || "").toLowerCase()) {
-    case "pending_approval":
-      return "Pending Approval";
-
-    case "recovered":
-      return "Recovered";
-
-    case "escalated":
-      return "Escalated";
-
-    case "rejected":
-      return "Rejected";
-
-    case "no_action":
-      return "No Action";
-
-    case "blocked":
-      return "Blocked";
-
-    case "failed":
-      return "Failed";
-
-    default:
-      return status || "Unknown";
-  }
+function getAction(payment) {
+  return (
+    payment?.policy?.action ||
+    payment?.action ||
+    "DO_NOT_RETRY"
+  );
 }
 
-function auditType(event) {
-  const value = String(event || "").toLowerCase();
-
-  if (
-    value.includes("verified") ||
-    value.includes("recovered") ||
-    value.includes("executed")
-  ) {
-    return "audit-success";
-  }
-
-  if (value.includes("pending") || value.includes("approval")) {
-    return "audit-pending";
-  }
-
-  if (
-    value.includes("failed") ||
-    value.includes("error") ||
-    value.includes("rejected")
-  ) {
-    return "audit-failed";
-  }
-
-  if (value.includes("escalation")) {
-    return "audit-escalation";
-  }
-
-  return "audit-neutral";
+function getBank(payment) {
+  return (
+    payment?.metadata?.network?.bank ||
+    payment?.ml_features?.bank ||
+    "UNKNOWN"
+  );
 }
 
-function auditIcon(event) {
-  const value = String(event || "").toLowerCase();
-
-  if (
-    value.includes("verified") ||
-    value.includes("recovered") ||
-    value.includes("executed")
-  ) {
-    return "✓";
-  }
-
-  if (
-    value.includes("failed") ||
-    value.includes("error") ||
-    value.includes("rejected")
-  ) {
-    return "✕";
-  }
-
-  if (value.includes("escalation")) {
-    return "!";
-  }
-
-  if (value.includes("pending") || value.includes("approval")) {
-    return "●";
-  }
-
-  return "•";
+function getErrorCode(payment) {
+  return (
+    payment?.metadata?.failure?.error_code ||
+    payment?.ml_features?.error_code ||
+    "UNKNOWN"
+  );
 }
+
+function getErrorSource(payment) {
+  return (
+    payment?.metadata?.failure?.error_source ||
+    payment?.ml_features?.error_source ||
+    "UNKNOWN"
+  );
+}
+
+function getErrorStep(payment) {
+  return (
+    payment?.metadata?.failure?.error_step ||
+    payment?.ml_features?.error_step ||
+    "UNKNOWN"
+  );
+}
+
+function getErrorReason(payment) {
+  return (
+    payment?.metadata?.failure?.error_reason ||
+    payment?.failure_reason ||
+    "UNKNOWN"
+  );
+}
+
+// =========================================================
+// APP
+// =========================================================
 
 function App() {
   const [payments, setPayments] = useState([]);
 
-  const [metrics, setMetrics] = useState({
-    revenue_at_risk: 0,
-    recovered_revenue: 0,
-    recovery_rate: 0,
-    pending_approvals: 0,
-  });
-
-  const [selectedPayment, setSelectedPayment] = useState(null);
-  const [support, setSupport] = useState(null);
-  const [audit, setAudit] = useState([]);
+  const [selectedPayment, setSelectedPayment] =
+    useState(null);
 
   const [loading, setLoading] = useState(true);
-  const [reviewLoading, setReviewLoading] = useState(false);
-  const [actionLoading, setActionLoading] = useState(false);
 
-  const [backendConnected, setBackendConnected] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
+  const [backendConnected, setBackendConnected] =
+    useState(false);
 
-  /*
-   * ---------------------------------------------------------
-   * LOAD RAZORPAY CHECKOUT SCRIPT
-   * ---------------------------------------------------------
-   */
+  const [error, setError] = useState("");
 
-  function loadRazorpayScript() {
-    return new Promise((resolve) => {
-      if (window.Razorpay) {
-        resolve(true);
-        return;
-      }
+  const [showMetadata, setShowMetadata] =
+    useState(false);
 
-      const script = document.createElement("script");
+  const [actionLoading, setActionLoading] =
+    useState(false);
 
-      script.src =
-        "https://checkout.razorpay.com/v1/checkout.js";
+  const [actionMessage, setActionMessage] =
+    useState("");
 
-      script.onload = () => resolve(true);
+  // =======================================================
+  // LOAD PAYMENTS
+  // =======================================================
 
-      script.onerror = () => resolve(false);
+  useEffect(() => {
+    loadPayments();
+  }, []);
 
-      document.body.appendChild(script);
-    });
-  }
-
-  /*
-   * ---------------------------------------------------------
-   * GENERIC API FUNCTION
-   * ---------------------------------------------------------
-   */
-
-  async function apiFetch(path, options = {}) {
-    const response = await fetch(`${API}${path}`, {
-      ...options,
-      headers: {
-        "Content-Type": "application/json",
-        ...(options.headers || {}),
-      },
-    });
-
-    if (!response.ok) {
-      let message = `HTTP ${response.status}`;
-
-      try {
-        const data = await response.json();
-
-        if (data?.detail) {
-          if (typeof data.detail === "string") {
-            message += `: ${data.detail}`;
-          } else if (data.detail?.message) {
-            message += `: ${data.detail.message}`;
-          }
-        }
-      } catch {
-        // Ignore invalid error JSON.
-      }
-
-      throw new Error(message);
-    }
-
-    return response.json();
-  }
-
-  /*
-   * ---------------------------------------------------------
-   * LOAD DASHBOARD
-   * ---------------------------------------------------------
-   */
-
-  async function loadDashboard() {
+  async function loadPayments() {
     setLoading(true);
-    setErrorMessage("");
+    setError("");
 
     try {
-      const [paymentsData, metricsData] = await Promise.all([
-        apiFetch("/payments"),
-        apiFetch("/metrics"),
-      ]);
+      const response = await fetch(
+  `${API_BASE_URL}/dashboard/payments`
+);
 
-      setPayments(paymentsData?.payments || []);
+      if (!response.ok) {
+        throw new Error(
+          `Backend returned ${response.status}`
+        );
+      }
 
-      setMetrics({
-        revenue_at_risk:
-          metricsData?.revenue_at_risk || 0,
+      const data = await response.json();
 
-        recovered_revenue:
-          metricsData?.recovered_revenue || 0,
+      let backendPayments = [];
 
-        recovery_rate:
-          metricsData?.recovery_rate || 0,
+      if (Array.isArray(data)) {
+        backendPayments = data;
+      } else if (Array.isArray(data.payments)) {
+        backendPayments = data.payments;
+      } else if (data.payments) {
+        backendPayments = Object.values(
+          data.payments
+        );
+      }
 
-        pending_approvals:
-          metricsData?.pending_approvals || 0,
-      });
+      if (backendPayments.length === 0) {
+        throw new Error(
+          "Backend returned no payments"
+        );
+      }
+
+      setPayments(backendPayments);
+
+      setSelectedPayment(
+        backendPayments[0]
+      );
 
       setBackendConnected(true);
-    } catch (error) {
-      console.error(
-        "Backend connection error:",
-        error
+    } catch (err) {
+      console.warn(
+        "Backend unavailable:",
+        err
+      );
+
+      setPayments(DEMO_PAYMENTS);
+
+      setSelectedPayment(
+        DEMO_PAYMENTS[0]
       );
 
       setBackendConnected(false);
 
-      setErrorMessage(
-        `Unable to connect to RecoverAI backend at ${API}. ${error.message}`
+      setError(
+        "Backend data unavailable. Showing local demo data."
       );
     } finally {
       setLoading(false);
     }
   }
 
-  /*
-   * ---------------------------------------------------------
-   * LOAD PAYMENT DETAILS
-   * ---------------------------------------------------------
-   */
+  // =======================================================
+  // SUMMARY
+  // =======================================================
 
-  async function loadPaymentDetails(paymentId) {
-    setReviewLoading(true);
-    setErrorMessage("");
+  const summary = useMemo(() => {
+    let revenueAtRisk = 0;
+    let recoverable = 0;
+    let recovered = 0;
+    let blocked = 0;
 
-    try {
-      const [supportData, auditData] = await Promise.all([
-        apiFetch(
-          `/support/${encodeURIComponent(paymentId)}`
-        ),
-
-        apiFetch(
-          `/audit/${encodeURIComponent(paymentId)}`
-        ),
-      ]);
-
-      setSupport(supportData);
-
-      setAudit(
-        auditData?.audit_log || []
+    payments.forEach((payment) => {
+      const amount = Number(
+        payment?.amount || 0
       );
 
-      setSelectedPayment(paymentId);
+      const action = getAction(payment);
 
-      setBackendConnected(true);
-    } catch (error) {
-      console.error(
-        "Review error:",
-        error
-      );
+      revenueAtRisk += amount;
 
-      setErrorMessage(
-        `Unable to load payment ${paymentId}: ${error.message}`
-      );
-    } finally {
-      setReviewLoading(false);
-    }
-  }
+      if (
+        action === "AUTO_RETRY" ||
+        action === "RETRY_WITH_APPROVAL"
+      ) {
+        recoverable += amount;
+      }
 
-  /*
-   * ---------------------------------------------------------
-   * REFRESH SELECTED PAYMENT
-   * ---------------------------------------------------------
-   */
+      if (
+        payment?.status === "recovered" ||
+        payment?.processor_confirmed === true
+      ) {
+        recovered += amount;
+      }
 
-  async function refreshSelectedPayment(paymentId) {
-    try {
-      const [supportData, auditData] = await Promise.all([
-        apiFetch(
-          `/support/${encodeURIComponent(paymentId)}`
-        ),
+      if (
+        action === "DO_NOT_RETRY" ||
+        payment?.status === "blocked" ||
+        payment?.status === "escalated"
+      ) {
+        blocked += amount;
+      }
+    });
 
-        apiFetch(
-          `/audit/${encodeURIComponent(paymentId)}`
-        ),
-      ]);
+    return {
+      revenueAtRisk,
+      recoverable,
+      recovered,
+      blocked,
+    };
+  }, [payments]);
 
-      setSupport(supportData);
+  // =======================================================
+  // GRAPH DATA
+  // =======================================================
 
-      setAudit(
-        auditData?.audit_log || []
-      );
+  const chartData = useMemo(() => {
+    return payments.map((payment, index) => ({
+      name:
+        getPaymentId(payment) === "unknown"
+          ? `Payment ${index + 1}`
+          : getPaymentId(payment).slice(-8),
 
-      setSelectedPayment(paymentId);
+      amount: Number(
+        payment?.amount || 0
+      ),
+    }));
+  }, [payments]);
 
-      return true;
-    } catch (error) {
-      console.error(
-        "Refresh selected payment error:",
-        error
-      );
+  // =======================================================
+  // RECOVERY ACTION
+  // =======================================================
 
-      setErrorMessage(
-        `Unable to refresh ${paymentId}: ${error.message}`
-      );
-
-      return false;
-    }
-  }
-
-  /*
-   * ---------------------------------------------------------
-   * APPROVE RECOVERY
-   * ---------------------------------------------------------
-   */
-
-  async function handleApprove() {
-    if (!selectedPayment) {
-      return;
-    }
+  async function executeRecovery() {
+    if (!selectedPayment) return;
 
     setActionLoading(true);
-    setErrorMessage("");
+    setActionMessage("");
 
     try {
-      await apiFetch(
-        `/approve/${encodeURIComponent(
-          selectedPayment
-        )}`,
+      const paymentId =
+        getPaymentId(selectedPayment);
+
+      const response = await fetch(
+        `${API_BASE_URL}/recovery/order/${paymentId}`,
         {
           method: "POST",
         }
       );
 
-      await loadDashboard();
+      const data = await response.json();
 
-      await refreshSelectedPayment(
-        selectedPayment
-      );
-    } catch (error) {
-      console.error(
-        "Approve error:",
-        error
-      );
-
-      setErrorMessage(
-        `Approval failed: ${error.message}`
-      );
-    } finally {
-      setActionLoading(false);
-    }
-  }
-
-  /*
-   * ---------------------------------------------------------
-   * REJECT RECOVERY
-   * ---------------------------------------------------------
-   */
-
-  async function handleReject() {
-    if (!selectedPayment) {
-      return;
-    }
-
-    setActionLoading(true);
-    setErrorMessage("");
-
-    try {
-      await apiFetch(
-        `/reject/${encodeURIComponent(
-          selectedPayment
-        )}`,
-        {
-          method: "POST",
-        }
-      );
-
-      await loadDashboard();
-
-      await refreshSelectedPayment(
-        selectedPayment
-      );
-    } catch (error) {
-      console.error(
-        "Reject error:",
-        error
-      );
-
-      setErrorMessage(
-        `Rejection failed: ${error.message}`
-      );
-    } finally {
-      setActionLoading(false);
-    }
-  }
-
-  /*
-   * ---------------------------------------------------------
-   * START RAZORPAY RECOVERY CHECKOUT
-   * ---------------------------------------------------------
-   */
-
-  async function startRecoveryCheckout(payment) {
-    if (!payment?.payment_id) {
-      setErrorMessage(
-        "Invalid payment selected for recovery."
-      );
-
-      return;
-    }
-
-    setActionLoading(true);
-    setErrorMessage("");
-
-    try {
-      /*
-       * STEP 1
-       * Create a NEW Razorpay recovery order.
-       */
-
-      const orderData = await apiFetch(
-        `/recovery/order/${encodeURIComponent(
-          payment.payment_id
-        )}`,
-        {
-          method: "POST",
-        }
-      );
-
-      console.log(
-        "RecoverAI recovery order:",
-        orderData
-      );
-
-      /*
-       * STEP 2
-       * Load Razorpay Checkout.
-       */
-
-      const loaded =
-        await loadRazorpayScript();
-
-      if (!loaded) {
+      if (!response.ok) {
         throw new Error(
-          "Razorpay Checkout failed to load."
+          data?.detail?.message ||
+            data?.detail ||
+            "Recovery action failed"
         );
       }
 
-      /*
-       * STEP 3
-       * Configure Razorpay Checkout.
-       */
-
-      const options = {
-        key: orderData.key_id,
-
-        amount: orderData.amount,
-
-        currency:
-          orderData.currency || "INR",
-
-        name: "RecoverAI",
-
-        description:
-          `Revenue recovery for ${payment.payment_id}`,
-
-        order_id:
-          orderData.order_id,
-
-        handler: async function (response) {
-          console.log(
-            "Razorpay Checkout response:",
-            response
-          );
-
-          try {
-            /*
-             * STEP 4
-             * Send Razorpay response to backend.
-             */
-
-            const verificationResult =
-              await apiFetch(
-                `/recovery/verify/${encodeURIComponent(
-                  payment.payment_id
-                )}`,
-                {
-                  method: "POST",
-
-                  body: JSON.stringify(
-                    response
-                  ),
-                }
-              );
-
-            console.log(
-              "Recovery verification result:",
-              verificationResult
-            );
-
-            /*
-             * STEP 5
-             * Refresh dashboard and selected payment.
-             */
-
-            await loadDashboard();
-
-            await refreshSelectedPayment(
-              payment.payment_id
-            );
-
-            /*
-             * STEP 6
-             * Display result.
-             */
-
-            if (
-              verificationResult.recovered
-            ) {
-              alert(
-                `Recovery successful! ${formatCurrency(
-                  verificationResult.recovered_amount
-                )} recovered.`
-              );
-            } else {
-              alert(
-                "Payment completed, but RecoverAI could not verify the recovery."
-              );
-            }
-          } catch (error) {
-            console.error(
-              "Recovery verification error:",
-              error
-            );
-
-            setErrorMessage(
-              `Recovery verification failed: ${error.message}`
-            );
-          }
-        },
-
-        modal: {
-          ondismiss: function () {
-            console.log(
-              "Razorpay recovery checkout closed."
-            );
-          },
-        },
-
-        theme: {
-          color: "#111827",
-        },
-      };
-
-      /*
-       * STEP 7
-       * Create Razorpay instance.
-       */
-
-      const razorpay =
-        new window.Razorpay(options);
-
-      /*
-       * Handle payment failure.
-       */
-
-      razorpay.on(
-        "payment.failed",
-        function (response) {
-          console.error(
-            "Razorpay recovery payment failed:",
-            response
-          );
-
-          const description =
-            response?.error?.description ||
-            "Recovery payment failed.";
-
-          setErrorMessage(
-            `Recovery payment failed: ${description}`
-          );
-        }
+      setActionMessage(
+        `Recovery order created: ${
+          data.order_id || "success"
+        }`
       );
 
-      /*
-       * STEP 8
-       * Open Razorpay Checkout.
-       */
-
-      razorpay.open();
-    } catch (error) {
-      console.error(
-        "Unable to start recovery:",
-        error
-      );
-
-      setErrorMessage(
-        `Unable to start recovery: ${error.message}`
+      await loadPayments();
+    } catch (err) {
+      setActionMessage(
+        err.message ||
+          "Recovery action failed"
       );
     } finally {
       setActionLoading(false);
     }
   }
 
-  /*
-   * ---------------------------------------------------------
-   * INITIAL LOAD
-   * ---------------------------------------------------------
-   */
+  // =======================================================
+  // MERCHANT APPROVAL
+  // =======================================================
 
-  useEffect(() => {
-    loadDashboard();
-  }, []);
+  async function approveRecovery() {
+    if (!selectedPayment) return;
 
-  /*
-   * ---------------------------------------------------------
-   * DERIVED DATA
-   * ---------------------------------------------------------
-   */
+    setActionLoading(true);
+    setActionMessage("");
 
-  const analysis = support || {};
+    try {
+      const paymentId =
+        getPaymentId(selectedPayment);
 
-  const verification =
-    analysis.verification || {};
+      const response = await fetch(
+        `${API_BASE_URL}/recovery/approve/${paymentId}`,
+        {
+          method: "POST",
+        }
+      );
 
-  const checks =
-    verification.checks || {};
+      const data = await response.json();
 
-  const policy =
-    analysis.policy_decision || {};
+      if (!response.ok) {
+        throw new Error(
+          data?.detail ||
+            "Approval failed"
+        );
+      }
 
-  const escalations =
-    Array.isArray(analysis.escalations)
-      ? analysis.escalations
-      : [];
+      setActionMessage(
+        data?.message ||
+          `Recovery approval processed for ${paymentId}`
+      );
 
-  const reasons =
-    analysis?.analysis?.reasons ||
-    analysis?.reasons ||
-    [];
+      await loadPayments();
+    } catch (err) {
+      setActionMessage(
+        err.message ||
+          "Approval failed"
+      );
+    } finally {
+      setActionLoading(false);
+    }
+  }
 
-  /*
-   * Find the currently selected payment
-   * from the payments returned by the backend.
-   */
+  // =======================================================
+  // LOADING
+  // =======================================================
 
-  const selectedPaymentData = payments.find(
-    (payment) =>
-      payment.payment_id === selectedPayment
-  );
+  if (loading) {
+    return (
+      <div className="loading-screen">
+        <div className="loading-content">
+          <div className="loading-logo">
+            RecoverAI
+          </div>
 
-  /*
-   * RecoverAI can start recovery when:
-   *
-   * 1. Original payment is failed
-   * 2. AI recommends RETRY
-   *
-   * OR
-   *
-   * 3. Policy explicitly says retry_payment
-   */
-
-  const canStartRecovery =
-    String(
-      analysis.current_status || ""
-    ).toLowerCase() === "failed" &&
-    (
-      String(
-        analysis.recommendation || ""
-      ).toLowerCase() === "retry" ||
-
-      String(
-        policy.action || ""
-      ).toLowerCase() === "retry_payment"
+          <div className="loading-text">
+            Loading recovery intelligence...
+          </div>
+        </div>
+      </div>
     );
+  }
 
-  /*
-   * ---------------------------------------------------------
-   * UI
-   * ---------------------------------------------------------
-   */
+  // =======================================================
+  // MAIN UI
+  // =======================================================
 
   return (
     <div className="app">
 
-      {/* SIDEBAR */}
+      {/* =================================================
+          HEADER
+      ================================================= */}
 
-      <aside className="sidebar">
+      <header className="header">
 
         <div className="brand">
 
-          <div className="brand-logo">
-            R
+          <div className="brand-icon">
+            <CircleDollarSign size={22} />
           </div>
 
           <div>
@@ -764,608 +596,520 @@ function App() {
             </div>
 
             <div className="brand-subtitle">
-              Revenue Recovery Agent
+              AI Revenue Recovery
             </div>
           </div>
 
         </div>
 
-        <nav className="navigation">
-
-          <div className="nav-item active">
-            <span>▦</span>
-            Dashboard
-          </div>
-
-          <div className="nav-item">
-            <span>⊙</span>
-            Recovery
-          </div>
-
-          <div className="nav-item">
-            <span>↗</span>
-            Analytics
-          </div>
-
-          <div className="nav-item">
-            <span>◷</span>
-            History
-          </div>
-
-        </nav>
-
-        <div className="agent-status">
-
-          <div className="agent-dot"></div>
-
-          <div>
-            <strong>
-              Agent Active
-            </strong>
-
-            <span>
-              Monitoring payments
-            </span>
-          </div>
-
-        </div>
-
-      </aside>
-
-      {/* MAIN */}
-
-      <main className="main">
-
-        <header className="page-header">
-
-          <div>
-
-            <h1>
-              Revenue Recovery
-            </h1>
-
-            <p>
-              Autonomous payment recovery intelligence
-            </p>
-
-          </div>
+        <div className="header-right">
 
           <button
             className="refresh-button"
-            onClick={loadDashboard}
-            disabled={loading}
+            onClick={loadPayments}
+            title="Refresh payments"
           >
-            ↻ Refresh
+            <RefreshCw size={16} />
+            Refresh
           </button>
 
-        </header>
+          <div className="connection-status">
 
-        {/* CONNECTION */}
+            <span
+              className={
+                backendConnected
+                  ? "status-dot online"
+                  : "status-dot offline"
+              }
+            />
 
-        {errorMessage && (
-          <div className="connection-error">
-            {errorMessage}
+            {backendConnected
+              ? "Backend Connected"
+              : "Demo Mode"}
+
+          </div>
+
+        </div>
+
+      </header>
+
+      <main className="dashboard">
+
+        {/* =================================================
+            NOTICE
+        ================================================= */}
+
+        {error && (
+          <div className="notice">
+            <AlertTriangle size={16} />
+            <span>{error}</span>
           </div>
         )}
 
-        {!errorMessage &&
-          backendConnected && (
-            <div className="connection-success">
-              ✓ RecoverAI backend connected
-            </div>
-          )}
+        {/* =================================================
+            SUMMARY
+        ================================================= */}
 
-        {/* METRICS */}
+        <section className="summary-grid">
 
-        <section className="metrics-grid">
+          <SummaryCard
+            icon={<CircleDollarSign />}
+            label="Revenue at Risk"
+            value={formatCurrency(
+              summary.revenueAtRisk
+            )}
+          />
 
-          <div className="metric-card">
+          <SummaryCard
+            icon={<Clock />}
+            label="Recoverable"
+            value={formatCurrency(
+              summary.recoverable
+            )}
+          />
 
-            <div className="metric-top">
+          <SummaryCard
+            icon={<CheckCircle2 />}
+            label="Recovered"
+            value={formatCurrency(
+              summary.recovered
+            )}
+          />
 
-              <span>
-                Revenue at Risk
-              </span>
-
-              <span className="metric-icon danger">
-                ₹
-              </span>
-
-            </div>
-
-            <strong>
-              {formatCurrency(
-                metrics.revenue_at_risk
-              )}
-            </strong>
-
-            <small>
-              Across failed payments
-            </small>
-
-          </div>
-
-          <div className="metric-card">
-
-            <div className="metric-top">
-
-              <span>
-                Recovered Revenue
-              </span>
-
-              <span className="metric-icon success">
-                ✓
-              </span>
-
-            </div>
-
-            <strong>
-              {formatCurrency(
-                metrics.recovered_revenue
-              )}
-            </strong>
-
-            <small>
-              Successfully recovered
-            </small>
-
-          </div>
-
-          <div className="metric-card">
-
-            <div className="metric-top">
-
-              <span>
-                Recovery Rate
-              </span>
-
-              <span className="metric-icon purple">
-                %
-              </span>
-
-            </div>
-
-            <strong>
-              {Number(
-                metrics.recovery_rate || 0
-              ).toFixed(1)}
-              %
-            </strong>
-
-            <small>
-              Current recovery performance
-            </small>
-
-          </div>
-
-          <div className="metric-card">
-
-            <div className="metric-top">
-
-              <span>
-                Pending Approvals
-              </span>
-
-              <span className="metric-icon warning">
-                !
-              </span>
-
-            </div>
-
-            <strong>
-              {metrics.pending_approvals}
-            </strong>
-
-            <small>
-              Require merchant review
-            </small>
-
-          </div>
+          <SummaryCard
+            icon={<ShieldCheck />}
+            label="Blocked"
+            value={formatCurrency(
+              summary.blocked
+            )}
+          />
 
         </section>
 
-        {/* CONTENT */}
+        {/* =================================================
+            MAIN CONTENT
+        ================================================= */}
 
         <section className="content-grid">
 
-          {/* PAYMENT TABLE */}
+          {/* =================================================
+              LEFT
+          ================================================= */}
 
-          <div className="panel payments-panel">
+          <div className="left-column">
 
-            <div className="panel-header">
+            {/* =================================================
+                PAYMENTS
+            ================================================= */}
 
-              <div>
+            <section className="panel">
 
-                <h2>
-                  Payment Recovery Monitor
-                </h2>
+              <div className="panel-header">
 
-                <p>
-                  Failed payments and their recovery status
-                </p>
+                <div>
+                  <h2 className="panel-title">
+                    Payment Recovery
+                  </h2>
+
+                  <p className="panel-subtitle">
+                    Failed payments analyzed by RecoverAI
+                  </p>
+                </div>
+
+                <div className="payment-count">
+                  {payments.length} payments
+                </div>
 
               </div>
 
-              <span className="count-badge">
-                {payments.length} payments
-              </span>
+              <div className="table-wrapper">
 
-            </div>
+                <table className="payment-table">
 
-            <div className="table-wrapper">
+                  <thead>
+                    <tr>
+                      <th>Payment ID</th>
+                      <th>Amount</th>
+                      <th>Risk</th>
+                      <th>Probability</th>
+                      <th>Policy</th>
+                    </tr>
+                  </thead>
 
-              <table>
+                  <tbody>
 
-                <thead>
+                    {payments.map(
+                      (payment, index) => {
 
-                  <tr>
+                        const paymentId =
+                          getPaymentId(payment);
 
-                    <th>
-                      Payment
-                    </th>
+                        const probability =
+                          getProbability(payment);
 
-                    <th>
-                      Amount
-                    </th>
+                        const risk =
+                          getRisk(payment);
 
-                    <th>
-                      Failure
-                    </th>
+                        const action =
+                          getAction(payment);
 
-                    <th>
-                      Probability
-                    </th>
+                        const isSelected =
+                          selectedPayment &&
+                          getPaymentId(
+                            selectedPayment
+                          ) === paymentId;
 
-                    <th>
-                      Status
-                    </th>
-
-                    <th>
-                      Action
-                    </th>
-
-                  </tr>
-
-                </thead>
-
-                <tbody>
-
-                  {payments.map(
-                    (payment) => (
-
-                      <tr
-                        key={
-                          payment.payment_id
-                        }
-                        className={
-                          selectedPayment ===
-                          payment.payment_id
-                            ? "row-selected"
-                            : ""
-                        }
-                      >
-
-                        <td>
-
-                          <div className="payment-id">
-                            {
-                              payment.payment_id
+                        return (
+                          <tr
+                            key={
+                              paymentId !==
+                              "unknown"
+                                ? paymentId
+                                : index
                             }
-                          </div>
+                            className={
+                              isSelected
+                                ? "payment-row selected"
+                                : "payment-row"
+                            }
+                            onClick={() => {
+                              setSelectedPayment(
+                                payment
+                              );
 
-                          {payment.customer_id && (
-                            <div className="customer-id">
-                              {
-                                payment.customer_id
-                              }
-                            </div>
-                          )}
+                              setShowMetadata(
+                                false
+                              );
 
-                        </td>
-
-                        <td>
-
-                          <strong>
-                            {formatCurrency(
-                              payment.amount
-                            )}
-                          </strong>
-
-                        </td>
-
-                        <td>
-
-                          {cleanText(
-                            payment.failure_reason ||
-                              "-"
-                          )}
-
-                        </td>
-
-                        <td>
-
-                          <strong>
-                            {formatProbability(
-                              payment.recovery_probability
-                            )}
-                          </strong>
-
-                        </td>
-
-                        <td>
-
-                          <span
-                            className={statusClass(
-                              payment.status
-                            )}
+                              setActionMessage(
+                                ""
+                              );
+                            }}
                           >
-                            {statusLabel(
-                              payment.status
-                            )}
-                          </span>
 
-                        </td>
+                            <td>
+                              <div className="payment-id">
+                                {paymentId}
+                              </div>
+                            </td>
 
-                        <td>
+                            <td>
+                              <strong>
+                                {formatCurrency(
+                                  payment.amount,
+                                  payment.currency
+                                )}
+                              </strong>
+                            </td>
 
-                          <button
-                            className="review-button"
-                            onClick={() =>
-                              loadPaymentDetails(
-                                payment.payment_id
-                              )
-                            }
-                            disabled={
-                              reviewLoading
-                            }
-                          >
-                            {reviewLoading &&
-                            selectedPayment ===
-                              payment.payment_id
-                              ? "Loading..."
-                              : "Review"}
-                          </button>
+                            <td>
+                              <RiskBadge
+                                risk={risk}
+                              />
+                            </td>
 
-                        </td>
+                            <td>
+                              <span
+                                className={
+                                  probability >=
+                                  0.75
+                                    ? "probability probability-high"
+                                    : probability >=
+                                      0.45
+                                    ? "probability probability-medium"
+                                    : "probability probability-low"
+                                }
+                              >
+                                {(
+                                  probability * 100
+                                ).toFixed(2)}
+                                %
+                              </span>
+                            </td>
 
-                      </tr>
+                            <td>
+                              <span className="policy-mini">
+                                {action}
+                              </span>
+                            </td>
 
-                    )
-                  )}
-
-                  {!loading &&
-                    payments.length === 0 && (
-
-                      <tr>
-
-                        <td
-                          colSpan="6"
-                          className="empty-state"
-                        >
-                          No payments found.
-                        </td>
-
-                      </tr>
-
+                          </tr>
+                        );
+                      }
                     )}
 
-                </tbody>
+                  </tbody>
 
-              </table>
+                </table>
 
-            </div>
+              </div>
+
+            </section>
+
+            {/* =================================================
+                BAR GRAPH
+            ================================================= */}
+
+            <section className="panel chart-panel">
+
+              <div className="panel-header">
+
+                <div>
+                  <h2 className="panel-title">
+                    Revenue Exposure
+                  </h2>
+
+                  <p className="panel-subtitle">
+                    Amount at risk per failed payment
+                  </p>
+                </div>
+
+                <CircleDollarSign
+                  size={20}
+                  className="panel-icon"
+                />
+
+              </div>
+
+              <div className="chart-container">
+
+                {chartData.length > 0 ? (
+
+                  <ResponsiveContainer
+                    width="100%"
+                    height={320}
+                  >
+
+                    <BarChart
+                      data={chartData}
+                      margin={{
+                        top: 10,
+                        right: 20,
+                        left: 10,
+                        bottom: 20,
+                      }}
+                    >
+
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        vertical={false}
+                      />
+
+                      <XAxis
+                        dataKey="name"
+                        tick={{
+                          fontSize: 11,
+                        }}
+                      />
+
+                      <YAxis
+                        tick={{
+                          fontSize: 11,
+                        }}
+                      />
+
+                      <Tooltip
+                        formatter={(value) =>
+                          formatCurrency(
+                            value
+                          )
+                        }
+                      />
+
+                      <Bar
+                        dataKey="amount"
+                        name="Amount at Risk"
+                        radius={[
+                          6,
+                          6,
+                          0,
+                          0,
+                        ]}
+                      />
+
+                    </BarChart>
+
+                  </ResponsiveContainer>
+
+                ) : (
+
+                  <div className="empty-chart">
+                    No payment data available.
+                  </div>
+
+                )}
+
+              </div>
+
+            </section>
 
           </div>
 
-          {/* AI AGENT PANEL */}
+          {/* =================================================
+              RIGHT
+          ================================================= */}
 
-          <div className="panel agent-panel">
+          <div className="right-column">
 
-            <div className="panel-header">
+            {selectedPayment && (
 
-              <div>
+              <section className="panel selected-panel">
 
-                <h2>
-                  AI Recovery Agent
-                </h2>
+                <div className="panel-header">
 
-                <p>
-                  Webhook → AI → Policy → Action →
-                  Verification → Audit
-                </p>
+                  <div>
+                    <h2 className="panel-title">
+                      Selected Payment
+                    </h2>
 
-              </div>
+                    <p className="panel-subtitle">
+                      {getPaymentId(
+                        selectedPayment
+                      )}
+                    </p>
+                  </div>
 
-              <span className="live-indicator">
+                  <ChevronRight size={18} />
 
-                <span></span>
-
-                LIVE
-
-              </span>
-
-            </div>
-
-            {!support ? (
-
-              <div className="agent-empty">
-
-                <div className="agent-empty-icon">
-                  ✦
                 </div>
-
-                <h3>
-                  Select a payment
-                </h3>
-
-                <p>
-                  Choose a payment to see the agent's
-                  analysis, policy decision, recovery
-                  action, verification result, and
-                  audit trail.
-                </p>
-
-              </div>
-
-            ) : (
-
-              <div className="agent-content">
-
-                {/* PAYMENT */}
 
                 <div className="selected-payment">
 
-                  <div>
+                  {/* =================================================
+                      PAYMENT DETAILS
+                  ================================================= */}
 
-                    <span>
-                      Analysis
-                    </span>
+                  <div className="detail-grid">
 
-                    <strong>
-                      {selectedPayment}
-                    </strong>
+                    <Detail
+                      label="Failure"
+                      value={
+                        selectedPayment.failure_reason ||
+                        getErrorReason(
+                          selectedPayment
+                        )
+                      }
+                    />
+
+                    <Detail
+                      label="Bank"
+                      value={getBank(
+                        selectedPayment
+                      )}
+                    />
+
+                    <Detail
+                      label="Error"
+                      value={getErrorCode(
+                        selectedPayment
+                      )}
+                    />
+
+                    <Detail
+                      label="Source"
+                      value={getErrorSource(
+                        selectedPayment
+                      )}
+                    />
+
+                    <Detail
+                      label="Step"
+                      value={getErrorStep(
+                        selectedPayment
+                      )}
+                    />
+
+                    <Detail
+                      label="Attempts"
+                      value={`${selectedPayment.retry_count || 0} / ${
+                        selectedPayment
+                          ?.policy
+                          ?.max_attempts || 2
+                      }`}
+                    />
+
+                    <Detail
+                      label="Method"
+                      value={
+                        selectedPayment
+                          ?.razorpay_method ||
+                        "UNKNOWN"
+                      }
+                    />
+
+                    <Detail
+                      label="Probability"
+                      value={`${(
+                        getProbability(
+                          selectedPayment
+                        ) * 100
+                      ).toFixed(2)}%`}
+                    />
 
                   </div>
 
-                  <span
-                    className={statusClass(
-                      analysis.current_status
-                    )}
-                  >
-                    {statusLabel(
-                      analysis.current_status
-                    )}
-                  </span>
+                  {/* =================================================
+                      AI DIAGNOSIS
+                  ================================================= */}
 
-                </div>
+                  <div className="diagnosis-box">
 
-                {/* RECOVERED AMOUNT */}
+                    <div className="section-heading">
 
-                {analysis.recovered_amount !==
-                  null &&
-                  analysis.recovered_amount !==
-                    undefined && (
-
-                    <div className="recovered-banner">
+                      <Bot size={17} />
 
                       <span>
-                        Recovered Amount
+                        AI Diagnosis
                       </span>
 
-                      <strong>
-                        {formatCurrency(
-                          analysis.recovered_amount
-                        )}
-                      </strong>
-
                     </div>
 
-                  )}
+                    <p className="diagnosis-text">
 
-                {/* AI ANALYSIS */}
+                      {selectedPayment
+                        ?.analysis
+                        ?.root_cause ||
+                        "No diagnosis available."}
 
-                <div className="agent-section">
-
-                  <div className="section-title">
-
-                    <span>
-                      01
-                    </span>
-
-                    AI Analysis
+                    </p>
 
                   </div>
 
-                  <div className="analysis-grid">
+                  {/* =================================================
+                      AI REASONING
+                  ================================================= */}
 
-                    <div className="analysis-item">
+                  {selectedPayment
+                    ?.analysis
+                    ?.reasons
+                    ?.length > 0 && (
 
-                      <label>
-                        Recovery Score
-                      </label>
+                    <div className="reasons-box">
 
-                      <strong>
-                        {formatProbability(
-                          analysis.recovery_score ??
-                            analysis.recovery_probability
-                        )}
-                      </strong>
+                      <div className="section-heading">
 
-                    </div>
+                        <Database size={16} />
 
-                    <div className="analysis-item">
+                        <span>
+                          AI Reasoning
+                        </span>
 
-                      <label>
-                        Risk Level
-                      </label>
-
-                      <strong>
-                        {cleanText(
-                          analysis.risk_level ||
-                            "-"
-                        )}
-                      </strong>
-
-                    </div>
-
-                    <div className="analysis-item">
-
-                      <label>
-                        Recommendation
-                      </label>
-
-                      <strong>
-                        {cleanText(
-                          analysis.recommendation ||
-                            "-"
-                        )}
-                      </strong>
-
-                    </div>
-
-                    <div className="analysis-item">
-
-                      <label>
-                        AI Engine
-                      </label>
-
-                      <strong>
-                        {cleanText(
-                          analysis.ai_engine ||
-                            "-"
-                        )}
-                      </strong>
-
-                    </div>
-
-                  </div>
-
-                  {reasons.length > 0 && (
-
-                    <div className="reasons">
-
-                      <label>
-                        Agent Reasoning
-                      </label>
+                      </div>
 
                       <ul>
 
-                        {reasons.map(
-                          (
-                            reason,
-                            index
-                          ) => (
-
-                            <li
-                              key={index}
-                            >
-                              {cleanText(
-                                reason
-                              )}
-                            </li>
-
-                          )
-                        )}
+                        {selectedPayment.analysis.reasons
+                          .slice(0, 8)
+                          .map(
+                            (
+                              reason,
+                              index
+                            ) => (
+                              <li key={index}>
+                                {reason}
+                              </li>
+                            )
+                          )}
 
                       </ul>
 
@@ -1373,515 +1117,167 @@ function App() {
 
                   )}
 
-                </div>
+                  {/* =================================================
+                      POLICY
+                  ================================================= */}
 
-                {/* POLICY */}
+                  <div className="policy-box">
 
-                <div className="agent-section">
+                    <div className="policy-header">
 
-                  <div className="section-title">
+                      <div className="section-heading">
 
-                    <span>
-                      02
-                    </span>
+                        <ShieldCheck size={17} />
 
-                    Policy Decision
+                        <span>
+                          Recovery Policy
+                        </span>
 
-                  </div>
+                      </div>
 
-                  <div className="policy-card">
-
-                    <div>
-
-                      <label>
-                        Action
-                      </label>
-
-                      <strong>
-                        {cleanText(
-                          policy.action ||
-                            "-"
+                      <PolicyBadge
+                        action={getAction(
+                          selectedPayment
                         )}
-                      </strong>
+                      />
 
                     </div>
 
-                    <div>
+                    <p className="policy-reason">
 
-                      <label>
-                        Approval
-                      </label>
+                      {selectedPayment
+                        ?.policy
+                        ?.reason ||
+                        "No policy reason available."}
 
-                      <strong>
-                        {policy.requires_merchant_approval
-                          ? "Merchant Approval Required"
-                          : "Automatic"}
-                      </strong>
+                    </p>
 
-                    </div>
-
-                    {policy.reason && (
-                      <p>
-                        {cleanText(
-                          policy.reason
-                        )}
-                      </p>
-                    )}
-
-                  </div>
-
-                </div>
-
-                {/* RECOVERY */}
-
-                <div className="agent-section">
-
-                  <div className="section-title">
-
-                    <span>
-                      03
-                    </span>
-
-                    Recovery Action
-
-                  </div>
-
-                  <div className="recovery-card">
-
-                    <label>
-                      Action Taken
-                    </label>
-
-                    <strong>
-                      {cleanText(
-                        analysis.action_taken ||
-                          "-"
-                      )}
-                    </strong>
-
-                  </div>
-
-                </div>
-
-                {/* VERIFICATION */}
-
-                <div className="agent-section">
-
-                  <div className="section-title">
-
-                    <span>
-                      04
-                    </span>
-
-                    Verification
-
-                  </div>
-
-                  <div
-                    className={
-                      verification.verified
-                        ? "verification-card verified"
-                        : "verification-card failed"
-                    }
-                  >
-
-                    <div className="verification-header">
-
-                      <strong>
-
-                        {verification.verified
-                          ? "✓ Verified"
-                          : "✕ Verification Failed"}
-
-                      </strong>
+                    <div className="guardrail">
 
                       <span>
-
-                        {cleanText(
-                          verification.message ||
-                            ""
-                        )}
-
+                        Guardrail
                       </span>
+
+                      <strong>
+                        {selectedPayment
+                          ?.policy
+                          ?.guardrail ||
+                          "UNKNOWN"}
+                      </strong>
 
                     </div>
 
-                    <div className="checks-grid">
+                  </div>
 
-                      {[
-                        [
-                          "action_is_retry_payment",
-                          "Action is retry payment",
-                        ],
+                  {/* =================================================
+                      ACTION BUTTONS
+                  ================================================= */}
 
-                        [
-                          "amount_recorded",
-                          "Amount recorded",
-                        ],
+                  <div className="action-buttons">
 
-                        [
-                          "processor_confirmed",
-                          "Processor confirmed",
-                        ],
-
-                        [
-                          "amount_matches_expected",
-                          "Amount matches expected",
-                        ],
-                      ].map(
-                        ([key, label]) => (
-
-                          <div
-                            className={
-                              checks[key]
-                                ? "check pass"
-                                : "check fail"
-                            }
-                            key={key}
-                          >
-
-                            <span>
-                              {checks[key]
-                                ? "✓"
-                                : "✕"}
-                            </span>
-
-                            {label}
-
-                          </div>
-
+                    <button
+                      className="btn"
+                      onClick={() =>
+                        setShowMetadata(
+                          !showMetadata
                         )
-                      )}
-
-                    </div>
-
-                  </div>
-
-                </div>
-
-                {/* ESCALATIONS */}
-
-                {escalations.length >
-                  0 && (
-
-                  <div className="agent-section">
-
-                    <div className="section-title">
-
-                      <span>
-                        05
-                      </span>
-
-                      Escalation
-
-                    </div>
-
-                    {escalations.map(
-                      (escalation) => (
-
-                        <div
-                          className="escalation-card"
-                          key={
-                            escalation.escalation_id
-                          }
-                        >
-
-                          <div className="escalation-header">
-
-                            <strong>
-                              {cleanText(
-                                escalation.escalation_id
-                              )}
-                            </strong>
-
-                            <span>
-                              {cleanText(
-                                escalation.severity
-                              ).toUpperCase()}
-                            </span>
-
-                          </div>
-
-                          <p>
-
-                            <strong>
-                              Reason:
-                            </strong>{" "}
-
-                            {cleanText(
-                              escalation.reason
-                            )}
-
-                          </p>
-
-                          <p>
-
-                            <strong>
-                              Status:
-                            </strong>{" "}
-
-                            {cleanText(
-                              escalation.status
-                            )}
-
-                          </p>
-
-                          <p>
-
-                            <strong>
-                              Recommended:
-                            </strong>{" "}
-
-                            {cleanText(
-                              escalation.recommended_action
-                            )}
-
-                          </p>
-
-                        </div>
-
-                      )
-                    )}
-
-                  </div>
-
-                )}
-
-                {/* NEXT ACTION */}
-
-                <div className="next-action">
-
-                  <label>
-                    Next Recommended Action
-                  </label>
-
-                  <strong>
-                    {cleanText(
-                      analysis.next_recommended_action ||
-                        "-"
-                    )}
-                  </strong>
-
-                </div>
-
-                {/* APPROVAL BUTTONS */}
-
-                {analysis.current_status ===
-                "pending_approval" ? (
-
-                  <div className="agent-actions">
-
-                    <button
-                      className="approve-button"
-                      onClick={
-                        handleApprove
-                      }
-                      disabled={
-                        actionLoading
                       }
                     >
-                      {actionLoading
-                        ? "Processing..."
-                        : "✓ Approve Recovery"}
+                      <Database size={15} />
+
+                      {showMetadata
+                        ? "Hide Metadata"
+                        : "View Metadata"}
                     </button>
 
-                    <button
-                      className="reject-button"
-                      onClick={
-                        handleReject
-                      }
-                      disabled={
-                        actionLoading
-                      }
-                    >
-                      {actionLoading
-                        ? "Processing..."
-                        : "✕ Reject"}
-                    </button>
+                    {getAction(
+                      selectedPayment
+                    ) ===
+                      "RETRY_WITH_APPROVAL" && (
 
-                  </div>
-
-                ) : (
-
-                  <div className="action-status-note">
-
-                    No merchant action is available
-                    for this payment because its current
-                    status is{" "}
-
-                    <strong>
-                      {statusLabel(
-                        analysis.current_status
-                      )}
-                    </strong>
-
-                    .
-
-                  </div>
-
-                )}
-
-                {/* REAL RAZORPAY RECOVERY */}
-
-                {canStartRecovery && (
-
-                  <div className="agent-section">
-
-                    <div className="section-title">
-
-                      <span>
-                        07
-                      </span>
-
-                      Revenue Recovery
-
-                    </div>
-
-                    <div className="recovery-card">
-
-                      <label>
-                        Recover this failed payment
-                      </label>
-
-                      <strong>
-                        {formatCurrency(
-                          selectedPaymentData?.amount ||
-                            analysis.amount ||
-                            0
-                        )}
-                      </strong>
-
-                     <td>
-  <div className="payment-actions">
-
-    {/* Review */}
-    <button
-      className="review-button"
-      onClick={() =>
-        loadPaymentDetails(payment.payment_id)
-      }
-      disabled={reviewLoading || actionLoading}
-    >
-      {reviewLoading &&
-      selectedPayment === payment.payment_id
-        ? "Loading..."
-        : "Review"}
-    </button>
-
-    {/* Recover - ONLY for failed payments */}
-    {String(payment.status || "").toLowerCase() === "failed" && (
-     <button
-  className="review-button"
-  onClick={() => loadPaymentDetails(payment.payment_id)}
-  disabled={reviewLoading}
->
-  {reviewLoading && selectedPayment === payment.payment_id
-    ? "Loading..."
-    : "Review →"}
-</button>
-    )}
-
-  </div>
-</td>
-
-                    </div>
-
-                  </div>
-
-                )}
-
-                {/* AUDIT */}
-
-                <div className="agent-section">
-
-                  <div className="section-title">
-
-                    <span>
-                      06
-                    </span>
-
-                    Audit Trail
-
-                  </div>
-
-                  {audit.length ===
-                  0 ? (
-
-                    <div className="audit-empty">
-                      No audit events found.
-                    </div>
-
-                  ) : (
-
-                    <div className="audit-timeline">
-
-                      {audit.map(
-                        (
-                          event,
-                          index
-                        ) => {
-
-                          const type =
-                            auditType(
-                              event.event
-                            );
-
-                          return (
-
-                            <div
-                              className={`audit-event ${type}`}
-                              key={`${event.timestamp}-${index}`}
-                            >
-
-                              <div className="audit-marker">
-
-                                {auditIcon(
-                                  event.event
-                                )}
-
-                              </div>
-
-                              <div className="audit-body">
-
-                                <div className="audit-top">
-
-                                  <strong>
-                                    {cleanText(
-                                      event.event
-                                    )}
-                                  </strong>
-
-                                  <span>
-                                    {new Date(
-                                      event.timestamp
-                                    ).toLocaleTimeString()}
-                                  </span>
-
-                                </div>
-
-                                {event.details &&
-                                  Object.keys(
-                                    event.details
-                                  ).length >
-                                    0 && (
-
-                                    <pre>
-                                      {JSON.stringify(
-                                        event.details,
-                                        null,
-                                        2
-                                      )}
-                                    </pre>
-
-                                  )}
-
-                              </div>
-
-                            </div>
-
-                          );
+                      <button
+                        className="btn btn-primary"
+                        onClick={
+                          approveRecovery
                         }
-                      )}
+                        disabled={
+                          actionLoading
+                        }
+                      >
+
+                        <CheckCircle2
+                          size={15}
+                        />
+
+                        {actionLoading
+                          ? "Processing..."
+                          : "Approve Recovery"}
+
+                      </button>
+                    )}
+
+                    {getAction(
+                      selectedPayment
+                    ) === "AUTO_RETRY" && (
+
+                      <button
+                        className="btn btn-primary"
+                        onClick={
+                          executeRecovery
+                        }
+                        disabled={
+                          actionLoading
+                        }
+                      >
+
+                        <CreditCard
+                          size={15}
+                        />
+
+                        {actionLoading
+                          ? "Creating..."
+                          : "Recovery Action"}
+
+                      </button>
+                    )}
+
+                  </div>
+
+                  {/* =================================================
+                      ACTION MESSAGE
+                  ================================================= */}
+
+                  {actionMessage && (
+
+                    <div className="action-message">
+
+                      {actionMessage}
+
+                    </div>
+
+                  )}
+
+                  {/* =================================================
+                      METADATA
+                  ================================================= */}
+
+                  {showMetadata && (
+
+                    <div className="metadata-box">
+
+                      <div className="metadata-header">
+                        Razorpay Metadata
+                      </div>
+
+                      <pre>
+                        {JSON.stringify(
+                          selectedPayment
+                            ?.metadata ||
+                            {},
+                          null,
+                          2
+                        )}
+                      </pre>
 
                     </div>
 
@@ -1889,104 +1285,9 @@ function App() {
 
                 </div>
 
-              </div>
+              </section>
 
             )}
-
-          </div>
-
-        </section>
-
-        {/* HOW IT WORKS */}
-
-        <section className="how-it-works">
-
-          <div className="how-header">
-
-            <h2>
-              How RecoverAI Works
-            </h2>
-
-            <p>
-              Autonomous revenue recovery pipeline
-            </p>
-
-          </div>
-
-          <div className="pipeline">
-
-            <div className="pipeline-step">
-
-              <span>
-                01
-              </span>
-
-              <strong>
-                Detect
-              </strong>
-
-              <p>
-                Identify failed payments and revenue
-                at risk.
-              </p>
-
-            </div>
-
-            <div className="pipeline-line"></div>
-
-            <div className="pipeline-step">
-
-              <span>
-                02
-              </span>
-
-              <strong>
-                Analyze
-              </strong>
-
-              <p>
-                Determine root cause and recovery
-                probability.
-              </p>
-
-            </div>
-
-            <div className="pipeline-line"></div>
-
-            <div className="pipeline-step">
-
-              <span>
-                03
-              </span>
-
-              <strong>
-                Decide
-              </strong>
-
-              <p>
-                Select the safest recovery intervention.
-              </p>
-
-            </div>
-
-            <div className="pipeline-line"></div>
-
-            <div className="pipeline-step">
-
-              <span>
-                04
-              </span>
-
-              <strong>
-                Recover
-              </strong>
-
-              <p>
-                Execute bounded recovery and measure
-                results.
-              </p>
-
-            </div>
 
           </div>
 
@@ -1995,6 +1296,118 @@ function App() {
       </main>
 
     </div>
+  );
+}
+
+// =========================================================
+// SUMMARY CARD
+// =========================================================
+
+function SummaryCard({
+  icon,
+  label,
+  value,
+}) {
+  return (
+    <div className="summary-card">
+
+      <div className="summary-top">
+
+        <div className="summary-label">
+          {label}
+        </div>
+
+        <div className="summary-icon">
+          {icon}
+        </div>
+
+      </div>
+
+      <div className="summary-value">
+        {value}
+      </div>
+
+    </div>
+  );
+}
+
+// =========================================================
+// DETAIL
+// =========================================================
+
+function Detail({
+  label,
+  value,
+}) {
+  return (
+    <div className="detail-item">
+
+      <div className="detail-label">
+        {label}
+      </div>
+
+      <div className="detail-value">
+        {value}
+      </div>
+
+    </div>
+  );
+}
+
+// =========================================================
+// RISK BADGE
+// =========================================================
+
+function RiskBadge({ risk }) {
+  const normalized =
+    String(risk || "HIGH").toLowerCase();
+
+  return (
+    <span
+      className={`badge badge-${normalized}`}
+    >
+
+      {normalized === "high" && (
+        <XCircle size={12} />
+      )}
+
+      {normalized === "medium" && (
+        <AlertTriangle size={12} />
+      )}
+
+      {normalized === "low" && (
+        <CheckCircle2 size={12} />
+      )}
+
+      {String(risk).toUpperCase()}
+
+    </span>
+  );
+}
+
+// =========================================================
+// POLICY BADGE
+// =========================================================
+
+function PolicyBadge({ action }) {
+  let className = "policy-action";
+
+  if (action === "AUTO_RETRY") {
+    className += " policy-auto";
+  }
+
+  if (action === "RETRY_WITH_APPROVAL") {
+    className += " policy-approval";
+  }
+
+  if (action === "DO_NOT_RETRY") {
+    className += " policy-blocked";
+  }
+
+  return (
+    <span className={className}>
+      {action}
+    </span>
   );
 }
 

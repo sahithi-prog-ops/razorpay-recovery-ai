@@ -1,7 +1,11 @@
 .venv/
+.venv-*/
 __pycache__/
 *.pyc
 .env
-backend/.env
+.env.*
+!.env.example
 node_modules/
 dist/
+*.log
+.DS_Store

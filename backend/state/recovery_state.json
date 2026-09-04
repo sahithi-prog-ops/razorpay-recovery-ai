@@ -1,408 +1,470 @@
 {
   "payments": {
-    "pay_test_8": {
-      "payment_id": "pay_test_8",
-      "customer_id": null,
-      "amount": 10958,
+    "pay_TWivUINC3yQh6J": {
+      "status": "failed",
+      "amount": 200.0,
       "currency": "INR",
-      "failure_reason": null,
-      "retry_count": 0,
-      "status": "recovered",
-      "action": "RETRY_PAYMENT",
+      "failure_reason": "payment_failed",
+      "razorpay_payment_id": "pay_TWivUINC3yQh6J",
+      "razorpay_method": "netbanking",
+      "metadata": {
+        "network": {
+          "bank": "BARB_R",
+          "wallet": null,
+          "vpa": null,
+          "acquirer_data": {
+            "bank_transaction_id": null
+          }
+        },
+        "user": {
+          "international": false,
+          "contact": "+918586896584",
+          "email": "void@razorpay.com"
+        },
+        "failure": {
+          "error_code": "BAD_REQUEST_ERROR",
+          "error_source": "bank",
+          "error_step": "payment_authorization",
+          "error_reason": "payment_failed",
+          "error_description": "Your payment didn't go through as it was declined by the bank. Try another payment method or contact your bank."
+        },
+        "merchant_notes": {
+          "checkout_device": null,
+          "cart_session_duration_seconds": null,
+          "user_preferred_language": null
+        },
+        "raw_notes": {}
+      },
+      "ml_features": {
+        "international": 0,
+        "contact_present": 1,
+        "bank": "BARB_R",
+        "wallet": "UNKNOWN",
+        "acquirer_transaction_present": 0,
+        "error_code": "BAD_REQUEST_ERROR",
+        "error_source": "BANK",
+        "error_step": "PAYMENT_AUTHORIZATION",
+        "error_reason": "PAYMENT_FAILED",
+        "checkout_device": "UNKNOWN",
+        "cart_session_duration_seconds": 0.0,
+        "user_preferred_language": "UNKNOWN"
+      },
+      "payment_id": "pay_TWivUINC3yQh6J",
+      "updated_at": "2026-09-04T13:10:17.650524",
       "analysis": {
-        "recovery_score": 88,
-        "recovery_probability": 0.8778,
-        "risk_level": "LOW",
-        "root_cause": "Payment failed for an unspecified or processor-level reason.",
-        "recommendation": "RETRY",
+        "recovery_score": 16,
+        "recovery_probability": 0.1627,
+        "risk_level": "HIGH",
+        "risk_tier": "HIGH",
+        "risk_label": "Low Recovery Potential",
+        "risk_description": "Payment has a low probability of successful recovery.",
+        "recommendation": "ESCALATE",
+        "root_cause": "The payment was declined by the issuing bank during payment authorization.",
         "reasons": [
-          "Customer has a strong payment history.",
-          "Subscription is currently active.",
-          "Customer has high lifetime value.",
-          "Payment has limited previous retry attempts."
+          "Payment has limited previous retry attempts.",
+          "Razorpay error code: BAD_REQUEST_ERROR.",
+          "Payment failure originated from BANK.",
+          "Failure occurred during PAYMENT_AUTHORIZATION.",
+          "Razorpay failure reason: PAYMENT_FAILED.",
+          "Customer contact information is available for an approved recovery workflow."
         ],
-        "ai_engine": "sklearn"
+        "reasoning": [
+          "Payment has limited previous retry attempts.",
+          "Razorpay error code: BAD_REQUEST_ERROR.",
+          "Payment failure originated from BANK.",
+          "Failure occurred during PAYMENT_AUTHORIZATION.",
+          "Razorpay failure reason: PAYMENT_FAILED.",
+          "Customer contact information is available for an approved recovery workflow."
+        ],
+        "ai_engine": "sklearn",
+        "ml_features": {
+          "international": 0,
+          "contact_present": 1,
+          "bank": "BARB_R",
+          "wallet": "UNKNOWN",
+          "acquirer_transaction_present": 0,
+          "error_code": "BAD_REQUEST_ERROR",
+          "error_source": "BANK",
+          "error_step": "PAYMENT_AUTHORIZATION",
+          "error_reason": "PAYMENT_FAILED",
+          "checkout_device": "UNKNOWN",
+          "cart_session_duration_seconds": 0.0,
+          "user_preferred_language": "UNKNOWN"
+        },
+        "stop_rule": {
+          "triggered": false,
+          "rule": "Retry threshold not reached.",
+          "action": "Normal recovery policy evaluation allowed."
+        },
+        "operational_action": {
+          "type": "ESCALATION",
+          "allowed": false,
+          "description": "Automated recovery stopped; manual review required."
+        },
+        "ml_model_loaded": true,
+        "ml_model_path": "C:\\Users\\allam\\OneDrive\\Desktop 1\\recover-ai\\ml\\recovery_model.pkl",
+        "ml_load_error": null
+      },
+      "policy": {
+        "action": "DO_NOT_RETRY",
+        "requires_merchant_approval": false,
+        "reason": "Recovery probability is below the safe intervention threshold.",
+        "guardrail": "LOW_PROBABILITY",
+        "probability": 0.1627,
+        "risk_tier": "HIGH",
+        "risk_label": "Low Recovery Potential",
+        "failure_reason": "payment_failed",
+        "max_attempts": 2
       }
     },
-    "pay_test_11": {
-      "payment_id": "pay_test_11",
-      "customer_id": "cus_test_11",
-      "amount": 90233,
+    "pay_TX67XdhnQ0fEfb": {
+      "status": "failed",
+      "amount": 20000,
+      "currency": "INR",
+      "failure_reason": "payment_failed",
+      "razorpay_payment_id": "pay_TX67XdhnQ0fEfb",
+      "razorpay_method": "netbanking",
+      "metadata": {
+        "network": {
+          "bank": "BARB_R",
+          "wallet": null,
+          "vpa": null,
+          "acquirer_data": {
+            "bank_transaction_id": null
+          }
+        },
+        "user": {
+          "international": false,
+          "contact": "+918586896584",
+          "email": "void@razorpay.com"
+        },
+        "failure": {
+          "error_code": "BAD_REQUEST_ERROR",
+          "error_source": "bank",
+          "error_step": "payment_authorization",
+          "error_reason": "payment_failed",
+          "error_description": "Your payment didn't go through as it was declined by the bank. Try another payment method or contact your bank."
+        },
+        "merchant_notes": {
+          "checkout_device": null,
+          "cart_session_duration_seconds": null,
+          "user_preferred_language": null
+        },
+        "raw_notes": {
+          "source": "RecoverAI",
+          "type": "recovery",
+          "original_payment_id": "pay_TWivUINC3yQh6J",
+          "attempt": "1"
+        }
+      },
+      "ml_features": {
+        "international": 0,
+        "contact_present": 1,
+        "bank": "BARB_R",
+        "wallet": "UNKNOWN",
+        "acquirer_transaction_present": 0,
+        "error_code": "BAD_REQUEST_ERROR",
+        "error_source": "BANK",
+        "error_step": "PAYMENT_AUTHORIZATION",
+        "error_reason": "PAYMENT_FAILED",
+        "checkout_device": "UNKNOWN",
+        "cart_session_duration_seconds": 0.0,
+        "user_preferred_language": "UNKNOWN"
+      },
+      "payment_id": "pay_TX67XdhnQ0fEfb",
+      "updated_at": "2026-09-04T07:14:40.581487",
+      "analysis": {
+        "recovery_score": 16,
+        "recovery_probability": 0.1627,
+        "risk_level": "HIGH",
+        "risk_tier": "HIGH",
+        "risk_label": "Low Recovery Potential",
+        "risk_description": "Payment has a low probability of successful recovery.",
+        "recommendation": "ESCALATE",
+        "root_cause": "The payment was declined by the issuing bank during payment authorization.",
+        "reasons": [
+          "Customer has more successful payments than failed payments.",
+          "Customer has high lifetime value.",
+          "Payment has already been retried 2 time(s).",
+          "Razorpay error code: BAD_REQUEST_ERROR.",
+          "Payment failure originated from BANK.",
+          "Failure occurred during PAYMENT_AUTHORIZATION.",
+          "Razorpay failure reason: PAYMENT_FAILED.",
+          "Customer contact information is available for an approved recovery workflow."
+        ],
+        "reasoning": [
+          "Customer has more successful payments than failed payments.",
+          "Customer has high lifetime value.",
+          "Payment has already been retried 2 time(s).",
+          "Razorpay error code: BAD_REQUEST_ERROR.",
+          "Payment failure originated from BANK.",
+          "Failure occurred during PAYMENT_AUTHORIZATION.",
+          "Razorpay failure reason: PAYMENT_FAILED.",
+          "Customer contact information is available for an approved recovery workflow."
+        ],
+        "ai_engine": "sklearn",
+        "ml_features": {
+          "international": 0,
+          "contact_present": 1,
+          "bank": "BARB_R",
+          "wallet": "UNKNOWN",
+          "acquirer_transaction_present": 0,
+          "error_code": "BAD_REQUEST_ERROR",
+          "error_source": "BANK",
+          "error_step": "PAYMENT_AUTHORIZATION",
+          "error_reason": "PAYMENT_FAILED",
+          "checkout_device": "UNKNOWN",
+          "cart_session_duration_seconds": 0.0,
+          "user_preferred_language": "UNKNOWN"
+        },
+        "stop_rule": {
+          "triggered": true,
+          "rule": "Maximum recovery attempts reached.",
+          "action": "Automated retry blocked; escalate."
+        },
+        "operational_action": {
+          "type": "ESCALATION",
+          "allowed": false,
+          "description": "Automated recovery stopped; manual review required."
+        },
+        "ml_model_loaded": true,
+        "ml_model_path": "C:\\Users\\allam\\OneDrive\\Desktop 1\\recover-ai\\ml\\recovery_model.pkl",
+        "ml_load_error": null
+      },
+      "policy": {
+        "action": "DO_NOT_RETRY",
+        "requires_merchant_approval": false,
+        "reason": "Recovery attempt limit reached.",
+        "guardrail": "MAX_ATTEMPTS_REACHED",
+        "probability": 0.1627,
+        "risk_tier": "HIGH",
+        "risk_label": "Low Recovery Potential",
+        "failure_reason": "payment_failed",
+        "max_attempts": 2
+      },
+      "retry_count": 2,
+      "action": "RECOVERY_EXECUTED",
+      "recovered_amount": {
+        "action": "DO_NOT_RETRY",
+        "requires_merchant_approval": false,
+        "reason": "Recovery probability is below the safe intervention threshold.",
+        "guardrail": "LOW_PROBABILITY",
+        "probability": 0.1627,
+        "risk_tier": "HIGH",
+        "risk_label": "Low Recovery Potential",
+        "failure_reason": "payment_failed",
+        "max_attempts": 2
+      },
+      "processor_confirmed": true,
+      "execution": {
+        "status": "BLOCKED",
+        "executed": false,
+        "action": "DO_NOT_RETRY",
+        "payment_id": "pay_TX67XdhnQ0fEfb",
+        "retry_count": 2,
+        "probability": 0.1627,
+        "guardrail": "MAX_ATTEMPTS_REACHED",
+        "message": "Recovery execution blocked by policy."
+      }
+    },
+    "test_approval_01": {
+      "payment_id": "test_approval_01",
+      "customer_id": "cus_approval_demo",
+      "amount": 10000,
       "currency": "INR",
       "failure_reason": "insufficient_funds",
       "retry_count": 1,
-      "status": "rejected",
-      "action": "NO_ACTION",
+      "status": "escalated",
+      "action": "RECOVERY_EXECUTED",
       "analysis": {
         "recovery_score": 59,
         "recovery_probability": 0.59,
         "risk_level": "MEDIUM",
-        "root_cause": "Customer has repeated payment failures and insufficient funds.",
-        "recommendation": "NO_ACTION",
-        "reasons": [
-          "Customer has multiple failed payments.",
-          "Payment failure reason is insufficient funds."
-        ],
-        "ai_engine": "sklearn"
-      }
-    },
-    "pay_test_15": {
-      "payment_id": "pay_test_15",
-      "customer_id": null,
-      "amount": 20533,
-      "currency": "INR",
-      "failure_reason": null,
-      "retry_count": 0,
-      "status": "rejected",
-      "action": "NO_ACTION",
-      "analysis": {
-        "recovery_score": 96,
-        "recovery_probability": 0.9603,
-        "risk_level": "LOW",
-        "root_cause": "Payment failed for an unspecified or processor-level reason.",
+        "root_cause": "Temporary insufficient funds may be recoverable after merchant-approved retry.",
         "recommendation": "RETRY",
         "reasons": [
-          "Customer has a strong payment history.",
-          "Subscription is currently active.",
-          "Customer has high lifetime value.",
-          "Payment has limited previous retry attempts."
+          "Customer has a moderate recovery potential.",
+          "Payment failure reason is insufficient funds.",
+          "Payment has no previous recovery attempts."
         ],
         "ai_engine": "sklearn"
-      }
-    },
-    "pay_new_9001": {
-      "payment_id": "pay_new_9001",
-      "customer_id": "cus_test_8",
-      "amount": 15499,
-      "currency": "INR",
-      "failure_reason": "card_declined",
-      "retry_count": 0,
-      "status": "recovered",
-      "action": "RETRY_PAYMENT",
-      "analysis": {
-        "recovery_score": 97,
-        "recovery_probability": 0.97,
-        "risk_level": "LOW",
-        "root_cause": "The customer's card was declined.",
-        "recommendation": "RETRY",
-        "reasons": [
-          "Customer has a strong payment history.",
-          "Subscription is currently active.",
-          "Customer has high lifetime value.",
-          "Payment has limited previous retry attempts."
-        ],
-        "ai_engine": "sklearn"
-      },
-      "policy": {
-        "action": "RETRY_WITH_APPROVAL",
-        "requires_merchant_approval": true,
-        "reason": "Failure reason 'card_declined' requires additional review before retry."
-      },
-      "verification": {
-        "verified": true,
-        "payment_id": "pay_new_9001",
-        "amount": 15499,
-        "status": "recovered",
-        "message": "Recovery verified successfully.",
-        "checks": {
-          "action_is_retry_payment": true,
-          "amount_recorded": true,
-          "processor_confirmed": true,
-          "amount_matches_expected": true
-        }
-      }
-    },
-    "pay_failverify_demo": {
-      "payment_id": "pay_failverify_demo",
-      "customer_id": "cus_test_8",
-      "amount": 2500,
-      "currency": "INR",
-      "failure_reason": "insufficient_funds",
-      "retry_count": 0,
-      "status": "escalated",
-      "action": "RETRY_PAYMENT",
-      "analysis": {
-        "recovery_score": 100,
-        "recovery_probability": 1.0,
-        "risk_level": "LOW",
-        "root_cause": "Insufficient funds may be recoverable on a later attempt.",
-        "recommendation": "RETRY",
-        "reasons": [
-          "Customer has a strong payment history.",
-          "Subscription is currently active.",
-          "Customer has high lifetime value.",
-          "Payment has limited previous retry attempts.",
-          "Insufficient funds may be recoverable on a later attempt."
-        ],
-        "ai_engine": "sklearn"
-      },
-      "verification": {
-        "verified": false,
-        "payment_id": "pay_failverify_demo",
-        "amount": 2500,
-        "status": "verification_failed",
-        "message": "Recovery verification failed: processor_confirmed.",
-        "checks": {
-          "action_is_retry_payment": true,
-          "amount_recorded": true,
-          "processor_confirmed": false,
-          "amount_matches_expected": true
-        }
-      }
-    },
-    "pay_verify_fields": {
-      "payment_id": "pay_verify_fields",
-      "customer_id": "cus_test_8",
-      "amount": 5000,
-      "currency": "INR",
-      "failure_reason": "expired_card",
-      "retry_count": 0,
-      "status": "recovered",
-      "action": "RETRY_PAYMENT",
-      "analysis": {
-        "recovery_score": 97,
-        "recovery_probability": 0.967,
-        "risk_level": "LOW",
-        "root_cause": "The card on file has expired and needs to be updated by the customer before any retry can succeed.",
-        "recommendation": "RETRY",
-        "reasons": [
-          "Customer has a strong payment history.",
-          "Subscription is currently active.",
-          "Customer has high lifetime value.",
-          "Payment has limited previous retry attempts.",
-          "This failure reason typically requires customer action or merchant review."
-        ],
-        "ai_engine": "sklearn"
-      },
-      "policy": {
-        "action": "RETRY_WITH_APPROVAL",
-        "requires_merchant_approval": true,
-        "reason": "Failure reason 'expired_card' requires additional review before retry."
-      },
-      "verification": {
-        "verified": true,
-        "payment_id": "pay_verify_fields",
-        "amount": 5000,
-        "status": "recovered",
-        "message": "Recovery verified successfully.",
-        "checks": {
-          "action_is_retry_payment": true,
-          "amount_recorded": true,
-          "processor_confirmed": true,
-          "amount_matches_expected": true
-        }
-      }
-    },
-    "pay_demo_final": {
-      "payment_id": "pay_demo_final",
-      "customer_id": "cus_demo_final",
-      "amount": 25000,
-      "currency": "INR",
-      "failure_reason": "insufficient_funds",
-      "retry_count": 0,
-      "status": "recovered",
-      "action": "RETRY_PAYMENT",
-      "analysis": {
-        "recovery_score": 92,
-        "recovery_probability": 0.9157,
-        "risk_level": "LOW",
-        "root_cause": "The customer's payment method had insufficient funds at the time of the charge. This is often temporary.",
-        "recommendation": "RETRY",
-        "reasons": [
-          "Customer has a strong payment history.",
-          "Customer has high lifetime value.",
-          "Payment has limited previous retry attempts.",
-          "Insufficient funds may be recoverable on a later attempt."
-        ],
-        "ai_engine": "sklearn"
-      },
-      "policy": {
-        "action": "AUTO_RETRY",
-        "requires_merchant_approval": false,
-        "reason": "High probability of successful recovery."
-      },
-      "verification": {
-        "verified": true,
-        "payment_id": "pay_demo_final",
-        "amount": 25000,
-        "status": "recovered",
-        "message": "Recovery verified successfully.",
-        "checks": {
-          "action_is_retry_payment": true,
-          "amount_recorded": true,
-          "processor_confirmed": true,
-          "amount_matches_expected": true
-        }
-      }
-    },
-    "test_payment": {
-      "payment_id": "test_payment",
-      "customer_id": "razorpay_test_payment",
-      "amount": 499.0,
-      "currency": "INR",
-      "failure_reason": "payment_failed",
-      "retry_count": 0,
-      "status": "recovered",
-      "action": "RETRY_PAYMENT",
-      "razorpay_payment_id": "test_payment",
-      "razorpay_method": "card",
-      "analysis": {
-        "recovery_score": 96,
-        "recovery_probability": 0.9629,
-        "risk_level": "LOW",
-        "root_cause": "Payment failed for an unspecified or processor-level reason.",
-        "recommendation": "RETRY",
-        "reasons": [
-          "Customer has a strong payment history.",
-          "Subscription is currently active.",
-          "Payment has limited previous retry attempts."
-        ],
-        "ai_engine": "sklearn"
-      },
-      "policy": {
-        "action": "AUTO_RETRY",
-        "requires_merchant_approval": false,
-        "reason": "High probability of successful recovery."
-      },
-      "verification": {
-        "verified": true,
-        "payment_id": "test_payment",
-        "amount": 499.0,
-        "status": "recovered",
-        "message": "Recovery verified successfully.",
-        "checks": {
-          "action_is_retry_payment": true,
-          "amount_recorded": true,
-          "processor_confirmed": true,
-          "amount_matches_expected": true
-        }
-      }
-    },
-    "pay_bounded_demo": {
-      "customer_id": "cus_test_8",
-      "amount": 2500,
-      "currency": "INR",
-      "failure_reason": "insufficient_funds",
-      "retry_count": 1,
-      "status": "recovered",
-      "payment_id": "pay_bounded_demo",
-      "updated_at": "2026-09-01T19:13:22.449764",
-      "action": "RECOVERY_EXECUTED",
-      "recovered_amount": 2500,
-      "processor_confirmed": true,
-      "verification": {
-        "verified": true,
-        "message": "Recovery verified successfully.",
-        "checks": {
-          "action_is_retry_payment": true,
-          "amount_recorded": true,
-          "processor_confirmed": true,
-          "amount_matches_expected": true
-        }
       },
       "recovery_lock": false,
-      "recovery_lock_status": "COMPLETED",
-      "analysis": {
-        "recovery_score": 99,
-        "reasons": [
-          "Customer has a strong payment history.",
-          "Subscription is currently active.",
-          "Customer has high lifetime value.",
-          "Payment has limited previous retry attempts.",
-          "Insufficient funds may be recoverable on a later attempt."
-        ],
-        "recovery_probability": 0.9933,
-        "risk_level": "LOW",
-        "root_cause": "The customer's payment method had insufficient funds at the time of the charge. This is often temporary.",
-        "recommendation": "RETRY",
-        "reasoning": [
-          "Customer has a strong payment history.",
-          "Subscription is currently active.",
-          "Customer has high lifetime value.",
-          "Payment has limited previous retry attempts.",
-          "Insufficient funds may be recoverable on a later attempt."
-        ],
-        "ai_engine": "sklearn"
-      }
-    },
-    "pay_limit_demo": {
-      "customer_id": "cus_test_8",
-      "amount": 3000,
-      "currency": "INR",
-      "failure_reason": "insufficient_funds",
-      "retry_count": 2,
-      "status": "escalated",
-      "payment_id": "pay_limit_demo",
-      "updated_at": "2026-09-01T19:13:22.471026",
-      "action": "RECOVERY_STOPPED",
+      "recovery_lock_status": "ESCALATED",
+      "updated_at": "2026-09-04T14:41:04.779476",
+      "policy": {
+        "action": "RETRY_WITH_APPROVAL",
+        "requires_merchant_approval": true,
+        "reason": "Recovery probability is moderate; merchant approval is required before retry.",
+        "guardrail": "MERCHANT_APPROVAL_REQUIRED",
+        "probability": 0.59,
+        "max_attempts": 2
+      },
+      "recovered_amount": 10000,
+      "processor_confirmed": false,
+      "processor_verification": {
+        "verified": false,
+        "payment_id": "test_approval_01",
+        "status": "verification_error",
+        "message": "The id provided does not exist"
+      },
       "verification": {
         "verified": false,
-        "payment_id": "pay_limit_demo",
-        "status": "verification_failed",
-        "message": "Maximum recovery attempts reached.",
-        "checks": {
-          "action_is_retry_payment": false,
-          "amount_recorded": false,
-          "processor_confirmed": false,
-          "amount_matches_expected": false
+        "payment_id": "test_approval_01",
+        "processor_confirmed": false,
+        "message": "Razorpay processor verification failed.",
+        "processor_verification": {
+          "verified": false,
+          "payment_id": "test_approval_01",
+          "status": "verification_error",
+          "message": "The id provided does not exist"
         }
-      },
-      "analysis": {
-        "recovery_score": 98,
-        "reasons": [
-          "Customer has a strong payment history.",
-          "Subscription is currently active.",
-          "Customer has high lifetime value.",
-          "Insufficient funds may be recoverable on a later attempt."
-        ],
-        "recovery_probability": 0.9817,
-        "risk_level": "LOW",
-        "root_cause": "The customer's payment method had insufficient funds at the time of the charge. This is often temporary.",
-        "recommendation": "RETRY",
-        "reasoning": [
-          "Customer has a strong payment history.",
-          "Subscription is currently active.",
-          "Customer has high lifetime value.",
-          "Insufficient funds may be recoverable on a later attempt."
-        ],
-        "ai_engine": "sklearn"
       }
     },
-    "pay_TWivUINC3yQh6J": {
-      "customer_id": "razorpay_test_customer",
-      "amount": 20000,
+    "pay_TWtFtbo2oLxarc": {
+      "payment_id": "pay_TWtFtbo2oLxarc",
+      "razorpay_payment_id": "pay_TWtFtbo2oLxarc",
+      "razorpay_method": "wallet",
+      "amount": 200.0,
       "currency": "INR",
+      "status": "failed",
       "failure_reason": "payment_failed",
       "retry_count": 0,
-      "status": "failed",
-      "razorpay_payment_id": "pay_TWivUINC3yQh6J",
-      "razorpay_method": "netbanking",
-      "payment_id": "pay_TWivUINC3yQh6J",
-      "updated_at": "2026-09-01T19:13:22.494952",
+      "recovery_lock": false,
+      "processor_confirmed": false,
+      "recovered_amount": 0,
+      "metadata": {
+        "network": {
+          "bank": null,
+          "wallet": "airtelmoney",
+          "vpa": null,
+          "acquirer_data": {
+            "transaction_id": null
+          }
+        },
+        "user": {
+          "international": false,
+          "contact": "+918586896584",
+          "email": "void@razorpay.com"
+        },
+        "failure": {
+          "error_code": "BAD_REQUEST_ERROR",
+          "error_source": "issuer",
+          "error_step": "payment_authorization",
+          "error_reason": "payment_failed",
+          "error_description": "Your payment didn't go through due to a temporary issue. Any debited amount will be refunded in 4-5 business days."
+        },
+        "merchant_notes": {
+          "checkout_device": null,
+          "cart_session_duration_seconds": null,
+          "user_preferred_language": null
+        },
+        "raw_notes": {
+          "source": "RecoverAI",
+          "type": "recovery",
+          "original_payment_id": "pay_TWivUINC3yQh6J",
+          "attempt": "1"
+        }
+      },
+      "ml_features": {
+        "international": 0,
+        "contact_present": 1,
+        "bank": "UNKNOWN",
+        "wallet": "AIRTELMONEY",
+        "acquirer_transaction_present": 0,
+        "error_code": "BAD_REQUEST_ERROR",
+        "error_source": "ISSUER",
+        "error_step": "PAYMENT_AUTHORIZATION",
+        "error_reason": "PAYMENT_FAILED",
+        "checkout_device": "UNKNOWN",
+        "cart_session_duration_seconds": 0.0,
+        "user_preferred_language": "UNKNOWN"
+      },
       "analysis": {
-        "recovery_score": 99,
+        "recovery_score": 9,
+        "recovery_probability": 0.0913,
+        "risk_level": "HIGH",
+        "risk_tier": "HIGH",
+        "risk_label": "Low Recovery Potential",
+        "risk_description": "Payment has a low probability of successful recovery.",
+        "recommendation": "ESCALATE",
+        "root_cause": "The payment was declined by the issuing bank during payment authorization.",
         "reasons": [
-          "Customer has a strong payment history.",
-          "Subscription is currently active.",
-          "Payment has limited previous retry attempts."
+          "Payment has limited previous retry attempts.",
+          "Razorpay error code: BAD_REQUEST_ERROR.",
+          "Payment failure originated from ISSUER.",
+          "Failure occurred during PAYMENT_AUTHORIZATION.",
+          "Razorpay failure reason: PAYMENT_FAILED.",
+          "Customer contact information is available for an approved recovery workflow."
         ],
-        "recovery_probability": 0.9881,
-        "risk_level": "LOW",
-        "root_cause": "Payment failed for an unspecified or processor-level reason.",
-        "recommendation": "RETRY",
         "reasoning": [
-          "Customer has a strong payment history.",
-          "Subscription is currently active.",
-          "Payment has limited previous retry attempts."
+          "Payment has limited previous retry attempts.",
+          "Razorpay error code: BAD_REQUEST_ERROR.",
+          "Payment failure originated from ISSUER.",
+          "Failure occurred during PAYMENT_AUTHORIZATION.",
+          "Razorpay failure reason: PAYMENT_FAILED.",
+          "Customer contact information is available for an approved recovery workflow."
         ],
-        "ai_engine": "sklearn"
+        "ai_engine": "sklearn",
+        "ml_features": {
+          "international": 0,
+          "contact_present": 1,
+          "bank": "UNKNOWN",
+          "wallet": "AIRTELMONEY",
+          "acquirer_transaction_present": 0,
+          "error_code": "BAD_REQUEST_ERROR",
+          "error_source": "ISSUER",
+          "error_step": "PAYMENT_AUTHORIZATION",
+          "error_reason": "PAYMENT_FAILED",
+          "checkout_device": "UNKNOWN",
+          "cart_session_duration_seconds": 0.0,
+          "user_preferred_language": "UNKNOWN"
+        },
+        "stop_rule": {
+          "triggered": false,
+          "rule": "Retry threshold not reached.",
+          "action": "Normal recovery policy evaluation allowed."
+        },
+        "operational_action": {
+          "type": "ESCALATION",
+          "allowed": false,
+          "description": "Automated recovery stopped; manual review required."
+        },
+        "ml_model_loaded": true,
+        "ml_model_path": "C:\\Users\\allam\\OneDrive\\Desktop 1\\recover-ai\\ml\\recovery_model.pkl",
+        "ml_load_error": null
+      },
+      "policy": {
+        "action": "DO_NOT_RETRY",
+        "requires_merchant_approval": false,
+        "reason": "Recovery probability is below the safe intervention threshold.",
+        "guardrail": "LOW_PROBABILITY",
+        "probability": 0.0913,
+        "risk_tier": "HIGH",
+        "risk_label": "Low Recovery Potential",
+        "failure_reason": "payment_failed",
+        "max_attempts": 2
       }
     }
   },
   "audit_log": [
     {
-      "timestamp": "2026-09-01T17:53:05.955129",
-      "payment_id": "pay_bounded_demo",
+      "timestamp": "2026-09-03T22:16:35.124186",
+      "payment_id": "pay_TWivUINC3yQh6J",
+      "event": "ESCALATION_CREATED",
+      "details": {
+        "escalation_id": "esc_a77d620306",
+        "payment_id": "pay_TWivUINC3yQh6J",
+        "reason": "Testing RecoverAI audit trail",
+        "severity": "medium",
+        "status": "open",
+        "recommended_action": "Manual review",
+        "created_at": "2026-09-03T22:16:35.113951"
+      }
+    },
+    {
+      "timestamp": "2026-09-04T06:32:23.957394",
+      "payment_id": "pay_TX67XdhnQ0fEfb",
       "event": "RECOVERY_ATTEMPT_STARTED",
       "details": {
         "attempt": 1,
@@ -411,45 +473,128 @@
       }
     },
     {
-      "timestamp": "2026-09-01T17:53:05.960438",
-      "payment_id": "pay_bounded_demo",
+      "timestamp": "2026-09-04T06:32:23.966958",
+      "payment_id": "pay_TX67XdhnQ0fEfb",
       "event": "RECOVERY_ACTION_EXECUTED",
       "details": {
         "attempt": 1,
-        "amount": 2500,
+        "amount": {
+          "action": "DO_NOT_RETRY",
+          "requires_merchant_approval": false,
+          "reason": "Recovery probability is below the safe intervention threshold.",
+          "guardrail": "LOW_PROBABILITY",
+          "probability": 0.1627,
+          "risk_tier": "HIGH",
+          "risk_label": "Low Recovery Potential",
+          "failure_reason": "payment_failed",
+          "max_attempts": 2
+        },
         "processor_confirmed": true,
         "bounded": true,
         "max_attempts": 2
       }
     },
     {
-      "timestamp": "2026-09-01T17:53:05.963328",
-      "payment_id": "pay_bounded_demo",
-      "event": "RECOVERY_VERIFICATION",
+      "timestamp": "2026-09-04T06:32:31.863034",
+      "payment_id": "pay_TX67XdhnQ0fEfb",
+      "event": "RECOVERY_ATTEMPT_STARTED",
       "details": {
-        "verified": true,
-        "message": "Recovery verified successfully.",
-        "checks": {
-          "action_is_retry_payment": true,
-          "amount_recorded": true,
-          "processor_confirmed": true,
-          "amount_matches_expected": true
-        }
+        "attempt": 2,
+        "max_attempts": 2,
+        "trigger": "AUTO_RETRY"
       }
     },
     {
-      "timestamp": "2026-09-01T17:53:05.966414",
-      "payment_id": "pay_bounded_demo",
-      "event": "PAYMENT_RECOVERED",
+      "timestamp": "2026-09-04T06:32:31.877348",
+      "payment_id": "pay_TX67XdhnQ0fEfb",
+      "event": "RECOVERY_ACTION_EXECUTED",
       "details": {
-        "amount": 2500,
-        "attempt": 1,
-        "verified": true
+        "attempt": 2,
+        "amount": {
+          "action": "DO_NOT_RETRY",
+          "requires_merchant_approval": false,
+          "reason": "Recovery probability is below the safe intervention threshold.",
+          "guardrail": "LOW_PROBABILITY",
+          "probability": 0.1627,
+          "risk_tier": "HIGH",
+          "risk_label": "Low Recovery Potential",
+          "failure_reason": "payment_failed",
+          "max_attempts": 2
+        },
+        "processor_confirmed": true,
+        "bounded": true,
+        "max_attempts": 2
       }
     },
     {
-      "timestamp": "2026-09-01T18:01:53.646884",
-      "payment_id": "pay_limit_demo",
+      "timestamp": "2026-09-04T06:44:39.279248",
+      "payment_id": "pay_TX67XdhnQ0fEfb",
+      "event": "RECOVERY_BLOCKED_BY_POLICY",
+      "details": {
+        "action": "DO_NOT_RETRY",
+        "probability": 0.1627,
+        "guardrail": "MAX_ATTEMPTS_REACHED",
+        "reason": "Recovery attempt limit reached."
+      }
+    },
+    {
+      "timestamp": "2026-09-04T06:51:55.060152",
+      "payment_id": "pay_TX67XdhnQ0fEfb",
+      "event": "RECOVERY_BLOCKED_BY_POLICY",
+      "details": {
+        "action": "DO_NOT_RETRY",
+        "probability": 0.1627,
+        "guardrail": "MAX_ATTEMPTS_REACHED",
+        "reason": "Recovery attempt limit reached."
+      }
+    },
+    {
+      "timestamp": "2026-09-04T06:54:21.308432",
+      "payment_id": "pay_TX67XdhnQ0fEfb",
+      "event": "RECOVERY_BLOCKED_BY_POLICY",
+      "details": {
+        "action": "DO_NOT_RETRY",
+        "probability": 0.1627,
+        "guardrail": "MAX_ATTEMPTS_REACHED",
+        "reason": "Recovery attempt limit reached."
+      }
+    },
+    {
+      "timestamp": "2026-09-04T06:57:05.688679",
+      "payment_id": "pay_TX67XdhnQ0fEfb",
+      "event": "RECOVERY_BLOCKED_BY_POLICY",
+      "details": {
+        "action": "DO_NOT_RETRY",
+        "probability": 0.1627,
+        "guardrail": "MAX_ATTEMPTS_REACHED",
+        "reason": "Recovery attempt limit reached."
+      }
+    },
+    {
+      "timestamp": "2026-09-04T07:00:33.210435",
+      "payment_id": "pay_TX67XdhnQ0fEfb",
+      "event": "RECOVERY_BLOCKED_BY_POLICY",
+      "details": {
+        "action": "DO_NOT_RETRY",
+        "probability": 0.1627,
+        "guardrail": "MAX_ATTEMPTS_REACHED",
+        "reason": "Recovery attempt limit reached."
+      }
+    },
+    {
+      "timestamp": "2026-09-04T07:14:40.575204",
+      "payment_id": "pay_TX67XdhnQ0fEfb",
+      "event": "RECOVERY_BLOCKED_BY_POLICY",
+      "details": {
+        "action": "DO_NOT_RETRY",
+        "probability": 0.1627,
+        "guardrail": "MAX_ATTEMPTS_REACHED",
+        "reason": "Recovery attempt limit reached."
+      }
+    },
+    {
+      "timestamp": "2026-09-04T14:13:42.266524",
+      "payment_id": "pay_TX67XdhnQ0fEfb",
       "event": "BOUNDED_ACTION_STOP",
       "details": {
         "retry_count": 2,
@@ -458,123 +603,107 @@
       }
     },
     {
-      "timestamp": "2026-09-01T19:01:28.325562",
-      "payment_id": "pay_TWivUINC3yQh6J",
+      "timestamp": "2026-09-04T14:29:08.408320",
+      "payment_id": "test_approval_01",
       "event": "RECOVERY_ORDER_CREATED",
       "details": {
-        "order_id": "order_TWseysu3BZJOXy",
-        "amount": 20000,
+        "order_id": "order_TXzcePesKLill0",
+        "amount": 10000,
+        "currency": "INR",
         "attempt": 1,
         "max_attempts": 2
       }
     },
     {
-      "timestamp": "2026-09-01T19:07:49.630639",
-      "payment_id": "pay_TWivUINC3yQh6J",
-      "event": "RECOVERY_ORDER_CREATED",
+      "timestamp": "2026-09-04T14:41:03.423589",
+      "payment_id": "test_approval_01",
+      "event": "MERCHANT_APPROVAL_GRANTED",
       "details": {
-        "order_id": "order_TWslh70Oj86ZIc",
-        "amount": 20000,
+        "previous_status": "pending_approval"
+      }
+    },
+    {
+      "timestamp": "2026-09-04T14:41:03.429987",
+      "payment_id": "test_approval_01",
+      "event": "APPROVED_RECOVERY_ATTEMPT_STARTED",
+      "details": {
         "attempt": 1,
+        "max_attempts": 2,
+        "trigger": "MERCHANT_APPROVAL"
+      }
+    },
+    {
+      "timestamp": "2026-09-04T14:41:03.441384",
+      "payment_id": "test_approval_01",
+      "event": "RECOVERY_ACTION_EXECUTED",
+      "details": {
+        "attempt": 1,
+        "amount": 10000,
+        "processor_confirmed": false,
+        "bounded": true,
         "max_attempts": 2
       }
     },
     {
-      "timestamp": "2026-09-01T19:24:15.819538",
-      "payment_id": "pay_TWivUINC3yQh6J",
-      "event": "RECOVERY_ORDER_CREATED",
+      "timestamp": "2026-09-04T14:41:04.771986",
+      "payment_id": "test_approval_01",
+      "event": "PROCESSOR_VERIFICATION",
       "details": {
-        "order_id": "order_TWt33ZNiwuKr7h",
-        "amount": 20000,
         "attempt": 1,
-        "max_attempts": 2
+        "processor_confirmed": false,
+        "verification": {
+          "verified": false,
+          "payment_id": "test_approval_01",
+          "status": "verification_error",
+          "message": "The id provided does not exist"
+        }
       }
     },
     {
-      "timestamp": "2026-09-01T19:25:59.436871",
-      "payment_id": "pay_TWivUINC3yQh6J",
-      "event": "RECOVERY_ORDER_CREATED",
+      "timestamp": "2026-09-04T14:41:04.794192",
+      "payment_id": "test_approval_01",
+      "event": "RECOVERY_VERIFICATION_FAILED",
       "details": {
-        "order_id": "order_TWt4sg50q01tO0",
-        "amount": 20000,
+        "amount": 10000,
         "attempt": 1,
-        "max_attempts": 2
-      }
-    },
-    {
-      "timestamp": "2026-09-01T19:28:43.427476",
-      "payment_id": "pay_TWivUINC3yQh6J",
-      "event": "RECOVERY_ORDER_CREATED",
-      "details": {
-        "order_id": "order_TWt7lgeDU2DMiB",
-        "amount": 20000,
-        "attempt": 1,
-        "max_attempts": 2
-      }
-    },
-    {
-      "timestamp": "2026-09-01T19:31:04.547741",
-      "payment_id": "pay_TWivUINC3yQh6J",
-      "event": "RECOVERY_ORDER_CREATED",
-      "details": {
-        "order_id": "order_TWtAFhYT610kue",
-        "amount": 20000,
-        "attempt": 1,
-        "max_attempts": 2
-      }
-    },
-    {
-      "timestamp": "2026-09-01T19:35:44.280208",
-      "payment_id": "pay_TWivUINC3yQh6J",
-      "event": "RECOVERY_ORDER_CREATED",
-      "details": {
-        "order_id": "order_TWtFB2es65Wwkf",
-        "amount": 20000,
-        "attempt": 1,
-        "max_attempts": 2
-      }
-    },
-    {
-      "timestamp": "2026-09-01T19:36:06.273660",
-      "payment_id": "pay_TWivUINC3yQh6J",
-      "event": "RECOVERY_ORDER_CREATED",
-      "details": {
-        "order_id": "order_TWtFZ3b0vCYWZP",
-        "amount": 20000,
-        "attempt": 1,
-        "max_attempts": 2
-      }
-    },
-    {
-      "timestamp": "2026-09-02T08:11:19.049549",
-      "payment_id": "pay_TWivUINC3yQh6J",
-      "event": "RECOVERY_ORDER_CREATED",
-      "details": {
-        "order_id": "order_TX67JsP2hMxJOg",
-        "amount": 20000,
-        "attempt": 1,
-        "max_attempts": 2
+        "verified": false,
+        "processor_confirmed": false,
+        "processor_verification": {
+          "verified": false,
+          "payment_id": "test_approval_01",
+          "status": "verification_error",
+          "message": "The id provided does not exist"
+        }
       }
     }
   ],
   "escalations": {
-    "esc_9b7368e72e": {
-      "escalation_id": "esc_9b7368e72e",
-      "payment_id": "pay_limit_demo",
-      "reason": "Maximum recovery attempts reached.",
-      "severity": "high",
+    "esc_a77d620306": {
+      "escalation_id": "esc_a77d620306",
+      "payment_id": "pay_TWivUINC3yQh6J",
+      "reason": "Testing RecoverAI audit trail",
+      "severity": "medium",
       "status": "open",
-      "recommended_action": "Manual merchant review.",
-      "created_at": "2026-09-01T17:54:42.332840"
+      "recommended_action": "Manual review",
+      "created_at": "2026-09-03T22:16:35.113951"
     },
-    "esc_3048ccbbee": {
-      "escalation_id": "esc_3048ccbbee",
-      "payment_id": "pay_limit_demo",
+    "esc_9e33e47a4f": {
+      "escalation_id": "esc_9e33e47a4f",
+      "payment_id": "pay_TX67XdhnQ0fEfb",
       "reason": "Maximum recovery attempts reached.",
       "severity": "high",
       "status": "open",
       "recommended_action": "Manual merchant review.",
-      "created_at": "2026-09-01T18:01:53.639183"
+      "created_at": "2026-09-04T14:13:42.261402"
+    },
+    "esc_9d5de13395": {
+      "escalation_id": "esc_9d5de13395",
+      "payment_id": "test_approval_01",
+      "reason": "Approved recovery could not be verified by Razorpay.",
+      "severity": "high",
+      "status": "open",
+      "recommended_action": "Manual review required.",
+      "created_at": "2026-09-04T14:41:04.787492"
     }
   }
 }

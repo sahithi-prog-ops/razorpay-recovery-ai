@@ -1,6 +1,10 @@
 import hashlib
 
-from state_manager import get_payment_state, save_payment_state, add_audit_event
+from backend.state_manager import (
+    get_payment_state,
+    save_payment_state,
+    add_audit_event,
+)
 
 
 def _simulate_processor_confirmation(payment_id, amount):

@@ -1,164 +1,246 @@
-import os
 import pandas as pd
-
-from sklearn.model_selection import train_test_split
-from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import OneHotEncoder
-from sklearn.pipeline import Pipeline
-from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, classification_report, roc_auc_score
-
 import joblib
 
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.impute import SimpleImputer
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report, accuracy_score
 
-# --------------------------------------------------
-# 1. Load dataset
-# --------------------------------------------------
 
-DATA_PATH = "../data/payments.csv"
-MODEL_PATH = "recovery_model.pkl"
+# =========================================================
+# 1. LOAD DATA
+# =========================================================
+
+DATA_PATH = "data/recovery_training.csv"
+MODEL_PATH = "ml/recovery_model.pkl"
 
 df = pd.read_csv(DATA_PATH)
 
-print("Dataset loaded successfully")
+print("\nDataset loaded")
 print("Rows:", len(df))
 print("Columns:", list(df.columns))
 
 
-# --------------------------------------------------
-# 2. Separate features and target
-# --------------------------------------------------
+# =========================================================
+# 2. CLEAN COLUMN NAMES
+# =========================================================
 
-X = df.drop(columns=["payment_id", "recovered"])
-
-y = df["recovered"]
-
-
-# --------------------------------------------------
-# 3. Identify features
-# --------------------------------------------------
-
-numerical_features = [
-    "amount",
-    "retry_count",
-    "successful_payments",
-    "failed_payments",
-    "lifetime_value",
-    "subscription_active",
-    "previous_failures",
-]
-
-categorical_features = [
-    "failure_reason"
-]
-
-
-# --------------------------------------------------
-# 4. Preprocessing
-# --------------------------------------------------
-
-preprocessor = ColumnTransformer(
-    transformers=[
-        (
-            "categorical",
-            OneHotEncoder(handle_unknown="ignore"),
-            categorical_features
-        )
-    ],
-    remainder="passthrough"
+df.columns = (
+    df.columns
+    .str.strip()
+    .str.lower()
+    .str.replace(" ", "_")
 )
 
 
-# --------------------------------------------------
-# 5. Create model pipeline
-# --------------------------------------------------
+# =========================================================
+# 3. CLEAN STRING VALUES
+# =========================================================
 
-model = Pipeline(
+for column in df.select_dtypes(include="object").columns:
+    df[column] = (
+        df[column]
+        .astype(str)
+        .str.strip()
+        .str.replace("*", "", regex=False)
+    )
+
+
+# =========================================================
+# 4. TARGET
+# =========================================================
+
+TARGET = "recovered"
+
+if TARGET not in df.columns:
+    raise ValueError(
+        f"Target column '{TARGET}' not found."
+    )
+
+X = df.drop(columns=[TARGET])
+y = df[TARGET].astype(int)
+
+
+# =========================================================
+# 5. FEATURE TYPES
+# =========================================================
+
+numeric_features = [
+    "international",
+    "contact_present",
+    "acquirer_transaction_present",
+    "cart_session_duration_seconds"
+]
+
+categorical_features = [
+    "bank",
+    "wallet",
+    "error_code",
+    "error_source",
+    "error_step",
+    "error_reason",
+    "checkout_device",
+    "user_preferred_language"
+]
+
+
+# Make sure required columns exist
+
+missing = [
+    column
+    for column in numeric_features + categorical_features
+    if column not in X.columns
+]
+
+if missing:
+    raise ValueError(
+        f"Missing columns: {missing}"
+    )
+
+
+# =========================================================
+# 6. PREPROCESSING
+# =========================================================
+
+numeric_pipeline = Pipeline(
     steps=[
-        ("preprocessor", preprocessor),
         (
-            "classifier",
-            LogisticRegression(max_iter=1000)
+            "imputer",
+            SimpleImputer(strategy="median")
+        ),
+        (
+            "scaler",
+            StandardScaler()
         )
     ]
 )
 
 
-# --------------------------------------------------
-# 6. Split dataset
-# --------------------------------------------------
+categorical_pipeline = Pipeline(
+    steps=[
+        (
+            "imputer",
+            SimpleImputer(strategy="most_frequent")
+        ),
+        (
+            "encoder",
+            OneHotEncoder(
+                handle_unknown="ignore"
+            )
+        )
+    ]
+)
+
+
+preprocessor = ColumnTransformer(
+    transformers=[
+        (
+            "numeric",
+            numeric_pipeline,
+            numeric_features
+        ),
+        (
+            "categorical",
+            categorical_pipeline,
+            categorical_features
+        )
+    ]
+)
+
+
+# =========================================================
+# 7. MODEL
+# =========================================================
+
+model = RandomForestClassifier(
+    n_estimators=300,
+    max_depth=10,
+    min_samples_leaf=2,
+    random_state=42,
+    class_weight="balanced"
+)
+
+
+pipeline = Pipeline(
+    steps=[
+        (
+            "preprocessor",
+            preprocessor
+        ),
+        (
+            "model",
+            model
+        )
+    ]
+)
+
+
+# =========================================================
+# 8. TRAIN / TEST SPLIT
+# =========================================================
 
 X_train, X_test, y_train, y_test = train_test_split(
     X,
     y,
-    test_size=0.2,
+    test_size=0.20,
     random_state=42,
     stratify=y
 )
 
-print("\nTraining records:", len(X_train))
-print("Testing records:", len(X_test))
+
+# =========================================================
+# 9. TRAIN
+# =========================================================
+
+print("\nTraining model...")
+
+pipeline.fit(
+    X_train,
+    y_train
+)
 
 
-# --------------------------------------------------
-# 7. Train
-# --------------------------------------------------
+# =========================================================
+# 10. EVALUATE
+# =========================================================
 
-print("\nTraining recovery prediction model...")
-
-model.fit(X_train, y_train)
-
-print("Model training completed.")
-
-
-# --------------------------------------------------
-# 8. Predictions
-# --------------------------------------------------
-
-predictions = model.predict(X_test)
-
-probabilities = model.predict_proba(X_test)[:, 1]
-
-
-# --------------------------------------------------
-# 9. Evaluate
-# --------------------------------------------------
+predictions = pipeline.predict(X_test)
 
 accuracy = accuracy_score(
     y_test,
     predictions
 )
 
-auc = roc_auc_score(
-    y_test,
-    probabilities
+print("\n==============================")
+print("MODEL RESULTS")
+print("==============================")
+
+print(
+    f"Accuracy: {accuracy:.4f}"
 )
-
-print("\n-----------------------------")
-print("MODEL PERFORMANCE")
-print("-----------------------------")
-
-print("Accuracy:", round(accuracy, 4))
-print("ROC-AUC:", round(auc, 4))
 
 print("\nClassification Report:")
 
 print(
     classification_report(
         y_test,
-        predictions
+        predictions,
+        zero_division=0
     )
 )
 
 
-# --------------------------------------------------
-# 10. Save model
-# --------------------------------------------------
+# =========================================================
+# 11. SAVE
+# =========================================================
 
 joblib.dump(
-    model,
+    pipeline,
     MODEL_PATH
 )
 
-print("\nModel saved successfully:")
-print(os.path.abspath(MODEL_PATH))
+print("\nModel saved to:")
+print(MODEL_PATH)

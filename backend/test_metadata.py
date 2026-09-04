@@ -1,35 +1,46 @@
-from metadata_extractor import extract_payment_metadata
+from feature_engineering import build_features
 
 
-sample_payment = {
-    "id": "pay_test_001",
-    "amount": 50000,
-    "currency": "INR",
-    "method": "netbanking",
-    "bank": "HDFC",
-    "wallet": None,
-    "international": False,
-    "email": "customer@example.com",
-    "contact": "+919876543210",
-
-    "error_code": "BAD_REQUEST_ERROR",
-    "error_description": "Payment processing failed because of incorrect OTP",
-    "error_source": "customer",
-    "error_step": "payment_authentication",
-    "error_reason": "incorrect_otp",
-
-    "acquirer_data": {
-        "bank_transaction_id": "0125836177"
+sample_metadata = {
+    "network": {
+        "bank": "HDFC",
+        "wallet": None,
+        "vpa": None,
+        "acquirer_data": {
+            "bank_transaction_id": "0125836177"
+        }
     },
 
-    "notes": {
+    "user": {
+        "international": False,
+        "contact": "+919999999999",
+        "email": "customer@example.com"
+    },
+
+    "merchant_notes": {
         "checkout_device": "Android",
-        "cart_session_duration_seconds": "42",
+        "cart_session_duration_seconds": 42,
         "user_preferred_language": "en-IN"
     }
 }
 
 
-result = extract_payment_metadata(sample_payment)
+sample_payment = {
+    "error_code": "BAD_REQUEST_ERROR",
+    "error_source": "customer",
+    "error_step": "payment_authentication",
+    "error_reason": "incorrect_otp"
+}
 
-print(result)
+
+features = build_features(
+    sample_metadata,
+    sample_payment
+)
+
+
+print("\nML FEATURES")
+print("=" * 50)
+
+for key, value in features.items():
+    print(f"{key}: {value}")

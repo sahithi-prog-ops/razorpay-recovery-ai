@@ -1,6 +1,6 @@
 import hashlib
 
-from state_manager import get_payment_state
+from backend.state_manager import get_payment_state
 
 
 # =========================================================

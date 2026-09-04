@@ -1,80 +1,328 @@
-
 import os
 from pathlib import Path
-
+import json
 from dotenv import load_dotenv
-
-# Load .env explicitly from the backend folder
-ENV_PATH = Path(__file__).resolve().parent / ".env"
-load_dotenv(dotenv_path=ENV_PATH)
-
-# Razorpay public API key
-RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID")
-
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 
-from razorpay_service import (
+from backend.razorpay_service import (
     verify_webhook_signature,
     create_recovery_order,
     verify_checkout_signature,
     verify_payment,
+    fetch_payment,
 )
 
-from planner import create_plan
+from backend.planner import create_plan
+from backend.policy_engine import evaluate_policy
 
-from analyzer import (
-    analyze_payment
+from backend.feature_engineering import build_features
+from backend.analyzer import analyze_payment
+
+from backend.state_manager import (
+    get_payment_state,
+    save_payment_state,
+    get_all_payment_states,
+    get_audit_log,
+    reserve_payment,
+    add_audit_event,
+    create_escalation,
 )
 
-from policy_engine import (
-    evaluate_policy
-)
-
-from actions.recovery import (
+from backend.actions.recovery import (
     approve_recovery,
     reject_recovery,
-    execute_recovery,
-    TERMINAL_STATES
+    TERMINAL_STATES,
 )
 
-from metrics import (
-    calculate_metrics
-)
+from backend.metrics import calculate_metrics
 
-from state_manager import (
-    save_payment_state,
-    add_audit_event,
-    get_audit_log,
-    get_payment_state,
-    get_all_payment_states,
-    create_escalation,
-    get_escalations_for_payment,
-    reserve_payment
-)
+
+
+# =========================================================
+# ENVIRONMENT
+# =========================================================
+
+ENV_PATH = Path(__file__).resolve().parent / ".env"
+load_dotenv(dotenv_path=ENV_PATH)
+
+RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID")
+
+if not RAZORPAY_KEY_ID:
+    print("WARNING: RAZORPAY_KEY_ID is not configured.")
+
+
+# =========================================================
+# APP
+# =========================================================
 
 app = FastAPI(
     title="RecoverAI"
-)#======================================
+)
+
+
+# =========================================================
 # CORS
 # =========================================================
 
 app.add_middleware(
-
     CORSMiddleware,
-
     allow_origins=["*"],
-
     allow_methods=["*"],
-
     allow_headers=["*"],
 )
-
 
 # =========================================================
 # HEALTH
 # =========================================================
+def extract_payment_metadata(payment: dict) -> dict:
+    """
+    Extract metadata directly from Razorpay payment entity.
+    """
 
+    acquirer_data = payment.get("acquirer_data") or {}
+    notes = payment.get("notes") or {}
+
+    return {
+        "network": {
+            "bank": payment.get("bank"),
+            "wallet": payment.get("wallet"),
+            "vpa": payment.get("vpa"),
+            "acquirer_data": acquirer_data,
+        },
+
+        "user": {
+            "international": payment.get("international"),
+            "contact": payment.get("contact"),
+            "email": payment.get("email"),
+        },
+
+        "failure": {
+            "error_code": payment.get("error_code"),
+            "error_source": payment.get("error_source"),
+            "error_step": payment.get("error_step"),
+            "error_reason": payment.get("error_reason"),
+            "error_description": payment.get("error_description"),
+        },
+
+        "merchant_notes": {
+            "checkout_device": notes.get("checkout_device"),
+            "cart_session_duration_seconds": notes.get(
+                "cart_session_duration_seconds"
+            ),
+            "user_preferred_language": notes.get(
+                "user_preferred_language"
+            ),
+        },
+
+        "raw_notes": notes,
+    }
+# =========================================================
+# DASHBOARD API
+# =========================================================
+
+@app.get("/dashboard/payments")
+def get_dashboard_payments():
+
+    state_path = Path(
+        "backend/state/recovery_state.json"
+    )
+
+    if not state_path.exists():
+        return {
+            "payments": [],
+            "summary": {
+                "revenue_at_risk": 0,
+                "recoverable": 0,
+                "recovered": 0,
+                "blocked": 0
+            }
+        }
+
+    try:
+
+        data = json.loads(
+            state_path.read_text(
+                encoding="utf-8"
+            )
+        )
+
+        payments = data.get(
+            "payments",
+            {}
+        )
+
+        result = []
+
+        for payment_id, payment in payments.items():
+
+            analysis = payment.get(
+                "analysis",
+                {}
+            )
+
+            policy = payment.get(
+                "policy",
+                {}
+            )
+
+            result.append({
+
+                "payment_id":
+                    payment_id,
+
+                "amount":
+                    payment.get(
+                        "amount",
+                        0
+                    ),
+
+                "currency":
+                    payment.get(
+                        "currency",
+                        "INR"
+                    ),
+
+                "status":
+                    payment.get(
+                        "status",
+                        "unknown"
+                    ),
+
+                "failure_reason":
+                    payment.get(
+                        "failure_reason",
+                        "unknown"
+                    ),
+
+                "retry_count":
+                    payment.get(
+                        "retry_count",
+                        0
+                    ),
+
+                "recovery_lock":
+                    payment.get(
+                        "recovery_lock",
+                        False
+                    ),
+
+                "analysis":
+                    analysis,
+
+                "policy":
+                    policy,
+
+                "metadata":
+                    payment.get(
+                        "metadata",
+                        {}
+                    ),
+
+                "processor_confirmed":
+                    payment.get(
+                        "processor_confirmed",
+                        False
+                    ),
+
+                "recovered_amount":
+                    payment.get(
+                        "recovered_amount",
+                        0
+                    ),
+
+                "updated_at":
+                    payment.get(
+                        "updated_at"
+                    )
+            })
+
+        # -------------------------------------------------
+        # SUMMARY
+        # -------------------------------------------------
+
+        revenue_at_risk = 0
+        recoverable = 0
+        recovered = 0
+        blocked = 0
+
+        for payment in result:
+
+            amount = float(
+                payment.get(
+                    "amount",
+                    0
+                ) or 0
+            )
+
+            status = str(
+                payment.get(
+                    "status",
+                    ""
+                )
+            ).lower()
+
+            action = str(
+                payment.get(
+                    "policy",
+                    {}
+                ).get(
+                    "action",
+                    ""
+                )
+            )
+
+            if status in [
+                "failed",
+                "pending_approval",
+                "escalated"
+            ]:
+                revenue_at_risk += amount
+
+            if action in [
+                "AUTO_RETRY",
+                "RETRY_WITH_APPROVAL"
+            ]:
+                recoverable += amount
+
+            if (
+                status == "recovered"
+                or payment.get(
+                    "processor_confirmed"
+                ) is True
+            ):
+                recovered += amount
+
+            if action == "DO_NOT_RETRY":
+                blocked += amount
+
+        return {
+
+            "payments":
+                result,
+
+            "summary": {
+
+                "revenue_at_risk":
+                    revenue_at_risk,
+
+                "recoverable":
+                    recoverable,
+
+                "recovered":
+                    recovered,
+
+                "blocked":
+                    blocked
+            }
+        }
+
+    except Exception as error:
+
+        raise HTTPException(
+            status_code=500,
+            detail=str(error)
+        )
 @app.get("/")
 def root():
 
@@ -123,6 +371,21 @@ def root():
         ]
     }
 
+
+@app.get("/health")
+def health():
+
+    return {
+        "status": "healthy",
+        "service": "RecoverAI"
+    }
+
+# =========================================================
+# PAYMENTS LIST
+# =========================================================
+# =========================================================
+# PAYMENTS LIST
+# =========================================================
 # =========================================================
 # PAYMENTS LIST
 # =========================================================
@@ -137,70 +400,25 @@ def list_payments():
     for payment_id, record in states.items():
 
         # -------------------------------------------------
-        # 1. Prefer stored AI analysis
+        # Stored AI analysis
         # -------------------------------------------------
 
-        stored_analysis = record.get("analysis") or {}
-
-        recovery_score = stored_analysis.get("recovery_score")
+        analysis = record.get("analysis") or {}
 
         # -------------------------------------------------
-        # 2. If missing, calculate using the SAME planner
-        #    and analyzer used by /plan/{payment_id}
+        # Stored Razorpay metadata
         # -------------------------------------------------
 
-        if recovery_score is None:
-
-            try:
-
-                plan = create_plan(payment_id)
-
-                if plan:
-
-                    analysis = analyze_payment(
-                        plan["payment"],
-                        plan["customer"],
-                        plan["subscription"]
-                    )
-
-                    recovery_score = analysis.get(
-                        "recovery_score"
-                    )
-
-                    # -----------------------------------------
-                    # Store the calculated analysis so future
-                    # dashboard requests don't need to
-                    # recalculate it.
-                    # -----------------------------------------
-
-                    if recovery_score is not None:
-
-                        save_payment_state(
-                            payment_id,
-                            analysis=analysis
-                        )
-
-                else:
-
-                    recovery_score = 0
-
-            except Exception as error:
-
-                print(
-                    f"AI analysis failed for {payment_id}: {error}"
-                )
-
-                recovery_score = 0
+        metadata = record.get("metadata") or {}
 
         # -------------------------------------------------
-        # 3. Safety fallback
+        # Stored ML features
         # -------------------------------------------------
 
-        if recovery_score is None:
-            recovery_score = 0
+        ml_features = record.get("ml_features") or {}
 
         # -------------------------------------------------
-        # 4. Dashboard response
+        # Dashboard payment record
         # -------------------------------------------------
 
         payments.append({
@@ -209,23 +427,144 @@ def list_payments():
                 payment_id,
 
             "customer_id":
-                record.get("customer_id"),
+                record.get(
+                    "customer_id"
+                ),
 
             "amount":
-                record.get("amount", 0),
+                record.get(
+                    "amount",
+                    0
+                ),
 
-            "failure_reason":
-                record.get("failure_reason"),
-
-            "recovery_probability":
-                recovery_score,
+            "currency":
+                record.get(
+                    "currency",
+                    "INR"
+                ),
 
             "status":
-                record.get("status")
+                record.get(
+                    "status"
+                ),
+
+            "failure_reason":
+                record.get(
+                    "failure_reason"
+                ),
+
+            "razorpay_payment_id":
+                record.get(
+                    "razorpay_payment_id",
+                    payment_id
+                ),
+
+            "razorpay_method":
+                record.get(
+                    "razorpay_method"
+                ),
+
+            # -------------------------------------------------
+            # AI
+            # -------------------------------------------------
+
+            "recovery_probability":
+                analysis.get(
+                    "recovery_probability",
+                    0
+                ),
+
+            "recovery_score":
+                analysis.get(
+                    "recovery_score",
+                    0
+                ),
+
+            "risk_level":
+                analysis.get(
+                    "risk_level"
+                ),
+
+            "root_cause":
+                analysis.get(
+                    "root_cause"
+                ),
+
+            "recommendation":
+                analysis.get(
+                    "recommendation"
+                ),
+
+            # -------------------------------------------------
+            # Razorpay metadata
+            # -------------------------------------------------
+
+            "metadata":
+                metadata,
+
+            # -------------------------------------------------
+            # ML features
+            # -------------------------------------------------
+
+            "ml_features":
+                ml_features,
+
+            # -------------------------------------------------
+            # Recovery state
+            # -------------------------------------------------
+
+            "retry_count":
+                record.get(
+                    "retry_count",
+                    0
+                ),
+
+            "max_recovery_attempts":
+                2,
+
+            "recovery_lock":
+                record.get(
+                    "recovery_lock",
+                    False
+                ),
+
+            "action_taken":
+                record.get(
+                    "action_taken"
+                ),
+
+            "verification":
+                record.get(
+                    "verification"
+                ),
+
+            # -------------------------------------------------
+            # Policy
+            # -------------------------------------------------
+
+            "policy":
+                record.get(
+                    "policy",
+                    {}
+                ),
+
+            # -------------------------------------------------
+            # Timestamp
+            # -------------------------------------------------
+
+            "updated_at":
+                record.get(
+                    "updated_at"
+                )
         })
 
     return {
-        "payments": payments
+
+        "count":
+            len(payments),
+
+        "payments":
+            payments
     }
 # =========================================================
 # PENDING
@@ -292,63 +631,200 @@ def metrics():
 # PLAN
 # =========================================================
 
+# =========================================================
+# PLAN
+# =========================================================
+
+# =========================================================
+# PLAN
+# =========================================================
+
+
+# =========================================================
+# PLAN
+# =========================================================
+
 @app.get("/plan/{payment_id}")
 def get_plan(payment_id: str):
 
-    plan = create_plan(
-        payment_id
+    # =====================================================
+    # 1. GET LOCAL RECOVERY STATE
+    # =====================================================
+
+    # =====================================================
+# 1. GET LOCAL RECOVERY STATE
+# =====================================================
+
+    record = get_payment_state(payment_id)
+
+    if not record:
+     raise HTTPException(
+        status_code=404,
+        detail="Payment not found."
     )
+    
+    # =====================================================
+# 2. GET RAZORPAY PAYMENT ID
+# =====================================================
 
-    if not plan:
+    razorpay_payment_id = record.get(
+    "razorpay_payment_id"
+)
 
-        raise HTTPException(
+    if not razorpay_payment_id:
+      raise HTTPException(
+        status_code=400,
+        detail="No Razorpay payment ID associated with this record."
+    )
+    
 
-            status_code=404,
+   
+    # =====================================================
+    # 3. FETCH REAL RAZORPAY PAYMENT
+    # =====================================================
 
-            detail=
-                "Payment not found in recovery dataset."
+    try:
+
+        razorpay_payment = fetch_payment(
+            razorpay_payment_id
         )
 
-    analysis = analyze_payment(
+    except Exception as error:
 
-        plan["payment"],
+        raise HTTPException(
+            status_code=502,
+            detail=f"Unable to fetch payment from Razorpay: {error}"
+        )
 
-        plan["customer"],
+    # =====================================================
+    # 4. EXTRACT REAL RAZORPAY METADATA
+    # =====================================================
 
-        plan["subscription"]
+    metadata = extract_payment_metadata(
+        razorpay_payment
     )
 
+    # =====================================================
+    # 5. BUILD ML FEATURES FROM REAL DATA
+    # =====================================================
+
+    ml_features = build_features(
+        metadata,
+        razorpay_payment
+    )
+
+    # =====================================================
+    # 6. UPDATE LOCAL STATE
+    # =====================================================
+
+    save_payment_state(
+        payment_id,
+
+        metadata=metadata,
+
+        ml_features=ml_features,
+
+        razorpay_payment_id=
+            razorpay_payment_id,
+
+        amount=(
+            razorpay_payment.get(
+                "amount",
+                0
+            ) / 100
+        ),
+
+        currency=razorpay_payment.get(
+            "currency",
+            "INR"
+        ),
+
+        status=razorpay_payment.get(
+            "status"
+        ),
+
+        razorpay_method=razorpay_payment.get(
+            "method"
+        ),
+
+        failure_reason=(
+            razorpay_payment.get(
+                "error_reason"
+            )
+            or
+            razorpay_payment.get(
+                "error_description"
+            )
+        )
+    )
+
+    # =====================================================
+    # 7. AI ANALYSIS
+    # =====================================================
+
+    analysis = analyze_payment(
+    razorpay_payment,
+    record,
+    None,
+    ml_features
+)
+
+    # =====================================================
+    # 8. POLICY
+    # =====================================================
+
     policy = evaluate_policy(
-
-        plan["payment"],
-
+        record,
         analysis
     )
 
+    # =====================================================
+    # 9. SAVE AI + POLICY
+    # =====================================================
+
+    save_payment_state(
+        payment_id,
+
+        analysis=analysis,
+
+        policy=policy,
+
+        metadata=metadata,
+
+        ml_features=ml_features
+    )
+
+    # =====================================================
+    # 10. RESPONSE
+    # =====================================================
+
     return {
+        "payment_id": payment_id,
 
-        "payment_id":
-            payment_id,
+        "razorpay_payment_id":
+            razorpay_payment_id,
 
-        "payment":
-            plan["payment"],
+        "source": "razorpay",
 
-        "analysis":
-            analysis,
+        "payment": razorpay_payment,
 
-        "policy":
-            policy,
+        "metadata": metadata,
 
-        "action":
-            policy["action"],
+        "ml_features": ml_features,
+
+        "analysis": analysis,
+
+        "policy": policy,
+
+        "action": policy.get(
+            "action"
+        ),
 
         "recommendation":
             analysis.get(
                 "recommendation"
             )
     }
-
-
 # =========================================================
 # APPROVE
 # =========================================================
@@ -434,28 +910,136 @@ def audit_log_for_payment(
         "audit_log":
             log
     }
-
-
 # =========================================================
 # SUPPORT
 # =========================================================
-
 @app.get("/support/{payment_id}")
 def support(payment_id: str):
 
-    record = get_payment_state(
-        payment_id
-    )
+    # -----------------------------------------------------
+    # 1. Get existing RecoverAI state
+    # -----------------------------------------------------
+
+    record = get_payment_state(payment_id)
+
+    # -----------------------------------------------------
+    # 2. If not in local state, fetch directly from Razorpay
+    # -----------------------------------------------------
 
     if not record:
 
-        raise HTTPException(
+        try:
 
-            status_code=404,
+            razorpay_payment = fetch_payment(
+                payment_id
+            )
 
-            detail=
-                "Payment not found."
+            # Extract real Razorpay metadata
+            metadata = extract_payment_metadata(
+                razorpay_payment
+            )
+
+            # Build ML features from real metadata
+            ml_feature_row = build_features(
+                metadata,
+                razorpay_payment
+            )
+
+                        # Create local RecoverAI record
+            record = save_payment_state(
+                payment_id,
+
+                status=razorpay_payment.get(
+                    "status",
+                    "failed"
+                ),
+
+                amount=(
+                    razorpay_payment.get(
+                        "amount",
+                        0
+                    ) / 100
+                ),
+
+                currency=razorpay_payment.get(
+                    "currency",
+                    "INR"
+                ),
+
+                failure_reason=razorpay_payment.get(
+                    "error_reason"
+                ),
+
+                razorpay_payment_id=payment_id,
+
+                razorpay_method=razorpay_payment.get(
+                    "method"
+                ),
+
+                metadata=metadata,
+
+                ml_features=ml_feature_row
+            )
+
+        except Exception as exc:
+
+            return {
+                "payment_id": payment_id,
+                "error": "Payment not found in Razorpay",
+                "details": str(exc)
+            }
+
+    # -----------------------------------------------------
+    # 3. Refresh metadata from Razorpay
+    # -----------------------------------------------------
+
+    razorpay_payment_id = record.get(
+        "razorpay_payment_id"
+    )
+
+    if razorpay_payment_id:
+
+        try:
+
+            razorpay_payment = fetch_payment(
+                razorpay_payment_id
+            )
+
+            metadata = extract_payment_metadata(
+                razorpay_payment
+            )
+
+            ml_feature_row = build_features(
+                metadata,
+                razorpay_payment
+            )
+
+            save_payment_state(
+                payment_id,
+                metadata=metadata,
+                ml_features=ml_feature_row
+            )
+
+            # Keep local record up to date
+            record = get_payment_state(
+                payment_id
+            )
+
+        except Exception as exc:
+
+            print(
+                f"Could not fetch Razorpay metadata "
+                f"for {payment_id}: {exc}"
+            )
+
+    else:
+
+        print(
+            f"No Razorpay payment ID stored for {payment_id}"
         )
+    # =====================================================
+    # ANALYSIS
+    # =====================================================
 
     analysis = (
         record.get("analysis")
@@ -467,13 +1051,17 @@ def support(payment_id: str):
         or {}
     )
 
-    verification = (
-        record.get("verification")
+    verification = record.get(
+        "verification"
     )
 
-    status = (
-        record.get("status")
+    status = record.get(
+        "status"
     )
+
+    # =====================================================
+    # NEXT ACTION
+    # =====================================================
 
     next_action_by_status = {
 
@@ -500,20 +1088,20 @@ def support(payment_id: str):
     }
 
     next_action = next_action_by_status.get(
-
         status,
-
         "Monitor payment; no action taken yet."
     )
+
+    # =====================================================
+    # RECOVERED AMOUNT
+    # =====================================================
 
     recovered_amount = (
 
         record.get("amount")
 
         if (
-
             status == "recovered"
-
             and
             (verification or {}).get(
                 "verified"
@@ -523,11 +1111,11 @@ def support(payment_id: str):
         else None
     )
 
+    # =====================================================
+    # SUPPORT RESPONSE
+    # =====================================================
+
     return {
-
-        "payment_id":
-            payment_id,
-
         "amount":
             record.get(
                 "amount",
@@ -591,7 +1179,7 @@ def support(payment_id: str):
 
         "action_taken":
             record.get(
-                "action"
+                "action_taken"
             ),
 
         "verification":
@@ -607,11 +1195,17 @@ def support(payment_id: str):
             next_action,
 
         "escalations":
-            get_escalations_for_payment(
-                payment_id
+            record.get(
+                "escalations",
+                []
             ),
 
-        # Engineering guarantees
+        "metadata":
+            metadata,
+
+        "ml_features":
+            ml_feature_row,
+
         "guardrails": {
 
             "idempotency":
@@ -632,6 +1226,91 @@ def support(payment_id: str):
     }
 
 
+# =========================================================
+# PAYMENT METADATA
+# =========================================================
+
+# =========================================================
+# PAYMENT METADATA
+# =========================================================
+@app.get("/payments/{payment_id}/metadata")
+def payment_metadata(payment_id: str):
+
+    record = get_payment_state(payment_id)
+
+    if not record:
+        raise HTTPException(
+            status_code=404,
+            detail="Payment not found."
+        )
+
+    metadata = record.get(
+        "metadata",
+        {}
+    )
+
+    ml_feature_row = record.get(
+        "ml_features",
+        {}
+    )
+
+    razorpay_payment_id = record.get(
+        "razorpay_payment_id",
+        payment_id
+    )
+
+    try:
+
+        razorpay_payment = fetch_payment(
+            razorpay_payment_id
+        )
+
+        metadata = extract_payment_metadata(
+            razorpay_payment
+        )
+
+        ml_feature_row = build_features(
+            metadata,
+            razorpay_payment
+        )
+
+        save_payment_state(
+            payment_id,
+            metadata=metadata,
+            ml_features=ml_feature_row
+        )
+
+    except Exception as exc:
+
+        import traceback
+
+        print(
+            f"Could not fetch Razorpay metadata "
+            f"for {payment_id}: {exc}"
+        )
+
+        traceback.print_exc()
+
+    return {
+        "payment_id":
+            payment_id,
+
+        "metadata":
+            metadata,
+
+        "ml_features":
+            ml_feature_row,
+
+        "failure_reason":
+            record.get(
+                "failure_reason"
+            ),
+
+        "status":
+            record.get(
+                "status"
+            )
+    }
 # =========================================================
 # ESCALATION
 # =========================================================
@@ -709,99 +1388,297 @@ def escalate(
     }
 
 
+# =========================================================
+# RECOVERY ORDER
+# =========================================================
+
 @app.post("/recovery/order/{payment_id}")
 def create_recovery_checkout_order(payment_id: str):
-    """
-    Create a new Razorpay Order for a bounded recovery attempt.
 
-    The original failed payment is never modified.
-    """
+    # =====================================================
+    # 1. LOAD PAYMENT
+    # =====================================================
 
-    payment = get_payment_state(payment_id)
+    payment = get_payment_state(
+        payment_id
+    )
 
     if not payment:
+
         raise HTTPException(
             status_code=404,
             detail="Payment not found."
         )
 
-    # Never create another recovery order for a terminal payment.
-    if payment.get("status") in TERMINAL_STATES:
+    # =====================================================
+    # 2. RECOVERY LOCK
+    # =====================================================
+
+    recovery_lock = payment.get(
+        "recovery_lock",
+        False
+    )
+
+    if recovery_lock:
+
         raise HTTPException(
-            status_code=400,
-            detail=f"Payment is already in terminal state: {payment.get('status')}"
+            status_code=409,
+            detail={
+                "message":
+                    "Recovery attempt already in progress.",
+
+                "payment_id":
+                    payment_id,
+
+                "recovery_order_id":
+                    payment.get(
+                        "recovery_order_id"
+                    )
+            }
         )
 
-    retry_count = int(payment.get("retry_count", 0))
+    # =====================================================
+    # 3. TERMINAL STATE
+    # =====================================================
 
-    # Hard safety limit.
-    if retry_count >= 2:
+    current_status = payment.get(
+        "status"
+    )
+
+    if current_status in TERMINAL_STATES:
+
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Payment is already in terminal state: "
+                f"{current_status}"
+            )
+        )
+
+    # =====================================================
+    # 4. RETRY COUNT
+    # =====================================================
+
+    try:
+
+        retry_count = int(
+            payment.get(
+                "retry_count",
+                0
+            )
+        )
+
+    except (TypeError, ValueError):
+
+        retry_count = 0
+
+    # =====================================================
+    # 5. HARD SAFETY LIMIT
+    # =====================================================
+
+    MAX_RECOVERY_ATTEMPTS = 2
+
+    if retry_count >= MAX_RECOVERY_ATTEMPTS:
+
         escalation = create_escalation(
             payment_id,
-            reason="Maximum recovery attempts reached.",
-            severity="high",
-            recommended_action="Manual merchant review.",
+            reason=
+                "Maximum recovery attempts reached.",
+            severity=
+                "high",
+            recommended_action=
+                "Manual merchant review."
         )
 
         add_audit_event(
             payment_id,
             "BOUNDED_ACTION_STOP",
             {
-                "retry_count": retry_count,
-                "max_attempts": 2,
-                "reason": "Recovery attempt limit reached.",
-            },
+                "retry_count":
+                    retry_count,
+
+                "max_attempts":
+                    MAX_RECOVERY_ATTEMPTS,
+
+                "reason":
+                    "Recovery attempt limit reached."
+            }
         )
 
         raise HTTPException(
             status_code=409,
             detail={
-                "message": "Maximum recovery attempts reached.",
-                "escalation": escalation,
-            },
+                "message":
+                    "Maximum recovery attempts reached.",
+
+                "escalation":
+                    escalation
+            }
         )
 
-    amount = int(payment.get("amount", 0))
+    # =====================================================
+    # 6. SET RECOVERY LOCK
+    # =====================================================
+
+    save_payment_state(
+        payment_id,
+        recovery_lock=True,
+        recovery_lock_status="IN_PROGRESS"
+    )
+
+    # =====================================================
+    # 7. AMOUNT
+    # =====================================================
+
+    try:
+
+        amount = int(
+            payment.get(
+                "amount",
+                0
+            )
+        )
+
+    except (TypeError, ValueError):
+
+        amount = 0
 
     if amount <= 0:
+
+        # IMPORTANT:
+        # release lock if validation fails
+
+        save_payment_state(
+            payment_id,
+            recovery_lock=False,
+            recovery_lock_status="FAILED"
+        )
+
         raise HTTPException(
             status_code=400,
             detail="Invalid recovery amount."
         )
 
-    order = create_recovery_order(
-        amount=amount,
-        currency=payment.get("currency", "INR"),
-        receipt=f"recoverai_{payment_id}_{retry_count + 1}",
-        notes={
-            "source": "RecoverAI",
-            "type": "recovery",
-            "original_payment_id": payment_id,
-            "attempt": str(retry_count + 1),
-        },
+    # =====================================================
+    # 8. CURRENCY
+    # =====================================================
+
+    currency = payment.get(
+        "currency",
+        "INR"
     )
 
-    add_audit_event(
-        payment_id,
-        "RECOVERY_ORDER_CREATED",
-        {
-            "order_id": order["id"],
-            "amount": amount,
-            "attempt": retry_count + 1,
-            "max_attempts": 2,
-        },
-    )
+    if not currency:
+        currency = "INR"
+
+    # =====================================================
+    # 9. CREATE RAZORPAY ORDER
+    # =====================================================
+
+    try:
+
+        order = create_recovery_order(
+            amount=amount,
+            currency=currency,
+            receipt=(
+                f"recoverai_"
+                f"{payment_id}_"
+                f"{retry_count + 1}"
+            ),
+            notes={
+                "source": "RecoverAI",
+                "type": "recovery",
+                "original_payment_id":
+                    payment_id,
+                "attempt":
+                    str(retry_count + 1)
+            }
+        )
+
+        # =================================================
+        # 10. UPDATE RETRY COUNT + LOCK
+        # =================================================
+
+        new_retry_count = retry_count + 1
+
+        save_payment_state(
+            payment_id,
+            retry_count=new_retry_count,
+            recovery_order_id=order["id"],
+            recovery_lock=True,
+            recovery_lock_status=
+                "WAITING_FOR_PAYMENT"
+        )
+
+        # =================================================
+        # 11. AUDIT
+        # =================================================
+
+        add_audit_event(
+            payment_id,
+            "RECOVERY_ORDER_CREATED",
+            {
+                "order_id":
+                    order["id"],
+
+                "amount":
+                    amount,
+
+                "currency":
+                    currency,
+
+                "attempt":
+                    new_retry_count,
+
+                "max_attempts":
+                    MAX_RECOVERY_ATTEMPTS
+            }
+        )
+
+    except Exception as error:
+
+        # IMPORTANT:
+        # release lock when Razorpay order creation fails
+
+        save_payment_state(
+            payment_id,
+            recovery_lock=False,
+            recovery_lock_status="FAILED"
+        )
+
+        add_audit_event(
+            payment_id,
+            "RECOVERY_ORDER_CREATION_FAILED",
+            {
+                "error":
+                    str(error),
+
+                "attempt":
+                    retry_count + 1
+            }
+        )
+
+        raise HTTPException(
+            status_code=500,
+            detail=
+                f"Failed to create recovery order: {error}"
+        )
+
+    # =====================================================
+    # 12. RESPONSE
+    # =====================================================
 
     return {
-              "success": True,
-              "key_id": RAZORPAY_KEY_ID,
-              "order_id": order["id"],
-              "amount": order["amount"],
-              "currency": order["currency"],
-              "original_payment_id": payment_id,
-              "attempt": retry_count + 1,
-              "max_attempts": 2,
-            }
+        "success": True,
+        "key_id": RAZORPAY_KEY_ID,
+        "order_id": order["id"],
+        "amount": order["amount"],
+        "currency": order["currency"],
+        "original_payment_id": payment_id,
+        "attempt": new_retry_count,
+        "max_attempts": MAX_RECOVERY_ATTEMPTS,
+    }
+
 @app.post("/recovery/verify/{payment_id}")
 def verify_recovery_checkout(
     payment_id: str,
@@ -859,6 +1736,13 @@ def verify_recovery_checkout(
     )
 
     if not verification.get("verified"):
+
+        save_payment_state(
+            payment_id,
+            recovery_lock=False,
+            recovery_lock_status="FAILED"
+        )
+
         add_audit_event(
             payment_id,
             "RECOVERY_PAYMENT_VERIFICATION_FAILED",
@@ -886,18 +1770,9 @@ def verify_recovery_checkout(
         action="RECOVERY_EXECUTED",
         recovered_amount=recovered_amount,
         processor_confirmed=True,
-        verification={
-            "verified": True,
-            "message": "Razorpay recovery payment verified.",
-            "checks": {
-                "signature_valid": True,
-                "processor_confirmed": True,
-                "amount_matches_expected": True,
-                "status_captured": True,
-            },
-            "recovery_order_id": order_id,
-            "recovery_payment_id": recovery_payment_id,
-        },
+        recovery_lock=False,
+        recovery_lock_status="COMPLETED",
+        verification=verification,
     )
 
     add_audit_event(
@@ -931,6 +1806,42 @@ def verify_recovery_checkout(
         "recovered_amount": recovered_amount,
         "verification": verification,
     }
+# =========================================================
+# MERCHANT APPROVAL
+# =========================================================
+
+@app.post("/recovery/approve/{payment_id}")
+def approve_recovery_endpoint(
+    payment_id: str
+):
+
+    try:
+
+        result = approve_recovery(
+            payment_id
+        )
+
+        return result
+
+    except ValueError as e:
+
+        raise HTTPException(
+            status_code=400,
+            detail=str(e)
+        )
+
+    except Exception as e:
+
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
+
+# =========================================================
+# MERCHANT REJECTION
+# =========================================================
+
+
 
 # =========================================================
 # RAZORPAY WEBHOOK
@@ -1008,12 +1919,11 @@ async def razorpay_webhook(
                 event_type
         }
 
-    # =====================================================
+        # =====================================================
     # 5. RAZORPAY ENTITY
     # =====================================================
 
     payment = (
-
         event
         .get("payload", {})
         .get("payment", {})
@@ -1021,29 +1931,41 @@ async def razorpay_webhook(
     )
 
     if not payment:
-
         raise HTTPException(
-
             status_code=400,
-
-            detail=
-                "Payment entity missing from Razorpay webhook."
+            detail="Payment entity missing from Razorpay webhook."
         )
+
+    # =====================================================
+    # PAYMENT METADATA EXTRACTION
+    # =====================================================
+
+    metadata = extract_payment_metadata(payment)
 
     payment_id = payment.get(
         "id"
     )
 
     if not payment_id:
-
         raise HTTPException(
-
             status_code=400,
-
-            detail=
-                "Razorpay payment ID missing."
+            detail="Razorpay payment ID missing."
         )
 
+    # =====================================================
+    # BUILD ML FEATURES
+    # =====================================================
+
+    ml_features = build_features(
+        metadata,
+        payment
+    ) 
+
+    # =====================================================
+# PAYMENT METADATA EXTRACTION
+# =====================================================
+
+    
     # =====================================================
     # 6. AMOUNT
     # =====================================================
@@ -1083,21 +2005,11 @@ async def razorpay_webhook(
     # =====================================================
 
     customer_id = (
-
-        payment.get(
-            "notes",
-            {}
-        ).get(
-            "customer_id"
-        )
-
-        if isinstance(
-            payment.get("notes"),
-            dict
-        )
-
-        else None
+    payment.get("notes", {}).get("customer_id")
     )
+
+    if not customer_id:
+      customer_id = None
 
     if not customer_id:
 
@@ -1177,47 +2089,24 @@ async def razorpay_webhook(
     # 10. WEBHOOK AUDIT
     # =====================================================
 
-    add_audit_event(
-
+        add_audit_event(
         payment_id,
-
         "RAZORPAY_PAYMENT_FAILED",
-
         {
-
-            "payment_id":
-                payment_id,
-
-            "amount":
-                amount_inr,
-
-            "currency":
-                payment.get(
-                    "currency"
-                ),
-
-            "method":
-                payment.get(
-                    "method"
-                ),
-
-            "error_code":
-                payment.get(
-                    "error_code"
-                ),
-
-            "error_description":
-                payment.get(
-                    "error_description"
-                ),
-
-            "error_reason":
-                payment.get(
-                    "error_reason"
-                )
+            "payment_id": payment_id,
+            "amount": amount_inr,
+            "currency": payment.get("currency"),
+            "method": payment.get("method"),
+            "error_code": payment.get("error_code"),
+            "error_description": payment.get(
+                "error_description"
+            ),
+            "error_reason": payment.get(
+                "error_reason"
+            ),
+            "metadata": metadata,
         }
     )
-
     # =====================================================
     # 11. PIPELINE START
     # =====================================================
@@ -1271,7 +2160,9 @@ async def razorpay_webhook(
 
             plan["customer"],
 
-            plan["subscription"]
+            plan["subscription"],
+
+            ml_features
         )
 
         add_audit_event(
@@ -1304,14 +2195,11 @@ async def razorpay_webhook(
         )
 
         save_payment_state(
-
             payment_id,
-
-            analysis=
-                analysis,
-
-            policy=
-                policy
+           analysis=analysis,
+             policy=policy,
+             metadata=metadata,
+             ml_features=ml_features
         )
 
         # =================================================
@@ -1348,20 +2236,33 @@ async def razorpay_webhook(
                 }
             )
 
-            (
-                _,
-                verification,
-                escalation
-            ) = execute_recovery(
+            save_payment_state(
 
-                payment_id,
+        payment_id,
 
-                amount_inr,
+        status="recovery_ready",
 
-                trigger=
-                    "RAZORPAY_PAYMENT_FAILED"
-            )
+        action="AUTO_RETRY"
+    )
 
+            add_audit_event(
+
+           payment_id,
+
+            "RECOVERY_READY_FOR_CHECKOUT",
+
+           {
+
+              "action":
+                "AUTO_RETRY",
+
+              "max_attempts":
+                2,
+ 
+              "reason":
+                policy.get("reason")
+        }
+    )
         # =================================================
         # MERCHANT APPROVAL
         # =================================================
@@ -1488,3 +2389,17 @@ async def razorpay_webhook(
 
             detail=str(error)
         )
+    if __name__ == "__main__":
+     import uvicorn
+
+    uvicorn.run(
+        "backend.main:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=True
+    )
+# =========================================================
+# HEALTH CHECK
+# =========================================================
+
+ 
